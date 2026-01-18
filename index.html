@@ -85,28 +85,29 @@ let streak = 0;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playStreakSound() {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // 🔔 Ding hissi
-    osc.type = "triangle";
+    // Metalik çan için 3 osilatör
+    const freqs = [
+        880 + streak * 50, // temel nota
+        1320 + streak * 30, // armonik 1
+        1760 + streak * 20  // armonik 2
+    ];
 
-    const baseFreq = 650;
-    const step = 70;
-    const freq = baseFreq + (streak * step);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+    gain.connect(ctx.destination);
 
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.15, audioCtx.currentTime + 0.08);
-
-    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.18);
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.2);
+    freqs.forEach(f => {
+        const osc = ctx.createOscillator();
+        osc.type = "triangle"; // çan benzeri metalik
+        osc.frequency.setValueAtTime(f, ctx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5); // kısa ding
+    });
 }
 
 function resetStreak() {
@@ -212,6 +213,7 @@ render();
 
 </body>
 </html>
+
 
 
 
