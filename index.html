@@ -131,21 +131,19 @@ const units = {
 
 // SES FONKSİYONLARI
 function playDing() {
-    const freqs = [880 + streak*50, 1320 + streak*30, 1760 + streak*20];
+    // Doğru cevap için tok, kısa ding
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
     gain.connect(audioCtx.destination);
 
-    freqs.forEach(f => {
-        const osc = audioCtx.createOscillator();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
-        osc.connect(gain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
-    });
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle"; // tok ve doğal ton
+    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime); // kalın ve tatmin edici
+    osc.connect(gain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
 }
 
 function playDong() {
@@ -260,4 +258,5 @@ document.getElementById("startBtn").onclick = function() {
 </script>
 </body>
 </html>
+
 
