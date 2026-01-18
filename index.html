@@ -76,8 +76,8 @@ h1 {
 /* Yanlış eşleşme: koyu turuncu kelime */
 .card.wrong {
     background: #161b22;
-    color: #d97706;
-    border-color: #d97706;
+    color: #b45309;
+    border-color: #b45309;
 }
 
 #score {
@@ -113,7 +113,6 @@ let selectedLeft = null;
 let selectedRight = null;
 let pairs = [];
 
-// Web Audio Context
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 // ÜNİTE & KELİME VERİSİ
@@ -150,20 +149,21 @@ function playDing() {
 }
 
 function playDong() {
-    const freqs = [440, 220, 110];
+    // Yanlış seçim → tiz ve kısa ses
+    const freqs = [660, 880, 990]; // tiz frekanslar
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3); // daha kısa
     gain.connect(audioCtx.destination);
 
     freqs.forEach(f => {
         const osc = audioCtx.createOscillator();
-        osc.type = "sine";
+        osc.type = "sine"; 
         osc.frequency.setValueAtTime(f, audioCtx.currentTime);
         osc.connect(gain);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.6);
+        osc.stop(audioCtx.currentTime + 0.3);
     });
 }
 
