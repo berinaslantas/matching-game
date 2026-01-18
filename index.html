@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Eşleştirme Oyunu</title>
 
+<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -41,7 +42,7 @@ h1 {
     border: 1px solid #30363d;
     font-size: 18px;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: all 0.15s ease;
 }
 
 .card:hover {
@@ -49,15 +50,22 @@ h1 {
 }
 
 .card.selected {
+    background: #21262d;
     border-color: #58a6ff;
 }
 
+/* Doğru eşleşme: yeşil */
 .card.correct {
-    color: #3fb950; /* yeşil */
+    background: #161b22; /* buton değil kelimenin arkaplanı aynı kalsın */
+    color: #238636;
+    border-color: #238636;
 }
 
+/* Yanlış eşleşme: koyu turuncu */
 .card.wrong {
-    color: #d97706; /* turuncu */
+    background: #161b22; 
+    color: #d97706;
+    border-color: #d97706;
 }
 
 #score {
@@ -69,7 +77,6 @@ h1 {
 </head>
 
 <body>
-
 <h1>🔗 Eşleştirme Oyunu</h1>
 
 <div class="game">
@@ -80,41 +87,15 @@ h1 {
 <div id="score">Skor: 0</div>
 
 <script>
-// 🔊 STREAK & SES MOTORU
 let streak = 0;
+let score = 0;
+let selectedLeft = null;
+let selectedRight = null;
+
+// Web Audio Context
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-function playStreakSound() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Metalik çan için 3 osilatör
-    const freqs = [
-        880 + streak * 50, // temel nota
-        1320 + streak * 30, // armonik 1
-        1760 + streak * 20  // armonik 2
-    ];
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-    gain.connect(ctx.destination);
-
-    freqs.forEach(f => {
-        const osc = ctx.createOscillator();
-        osc.type = "triangle"; // çan benzeri metalik
-        osc.frequency.setValueAtTime(f, ctx.currentTime);
-        osc.connect(gain);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.5); // kısa ding
-    });
-}
-
-function resetStreak() {
-    streak = 0;
-}
-
-// 🧠 OYUN VERİSİ
+// OYUN VERİSİ
 let pairs = [
     { left: "Apple", right: "Elma" },
     { left: "House", right: "Ev" },
@@ -122,10 +103,56 @@ let pairs = [
     { left: "Cat", right: "Kedi" }
 ];
 
-let selectedLeft = null;
-let selectedRight = null;
-let score = 0;
+// SES FONKSİYONLARI
+function playDing() {
+    // Doğru seçim
+    const freqs = [
+        880 + streak * 50,
+        1320 + streak * 30,
+        1760 + streak * 20
+    ];
 
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    gain.connect(audioCtx.destination);
+
+    freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+    });
+}
+
+function playDong() {
+    // Yanlış seçim
+    const freqs = [440, 220, 110]; // daha düşük tonlar
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    gain.connect(audioCtx.destination);
+
+    freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+    });
+}
+
+function resetStreak() {
+    streak = 0;
+}
+
+// KARTLARI ÇİZ
 function shuffle(arr) {
     return arr.sort(() => Math.random() - 0.5);
 }
@@ -160,6 +187,7 @@ function resetCards() {
     });
 }
 
+// SEÇİM FONKSİYONLARI
 function selectLeft(el, value) {
     resetCards();
     document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
@@ -176,6 +204,7 @@ function selectRight(el, value) {
     check();
 }
 
+// EŞLEŞME KONTROL
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
@@ -188,8 +217,7 @@ function check() {
 
     if (match) {
         streak++;
-        playStreakSound();
-
+        playDing();
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
 
@@ -197,9 +225,11 @@ function check() {
         rightCard.classList.add("correct");
 
         pairs = pairs.filter(p => p !== match);
+
         setTimeout(render, 180);
     } else {
         resetStreak();
+        playDong();
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
     }
@@ -208,12 +238,9 @@ function check() {
     selectedRight = null;
 }
 
+// OYUNU BAŞLAT
 render();
 </script>
 
 </body>
 </html>
-
-
-
-
