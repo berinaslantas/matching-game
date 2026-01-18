@@ -41,7 +41,7 @@ h1 {
     border: 1px solid #30363d;
     font-size: 18px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .card:hover {
@@ -49,20 +49,15 @@ h1 {
 }
 
 .card.selected {
-    background: #21262d;
     border-color: #58a6ff;
 }
 
 .card.correct {
-    background: #238636;
-    color: #ffffff;
-    border-color: #238636;
+    color: #3fb950; /* yeşil */
 }
 
 .card.wrong {
-    background: #da3633;
-    color: #ffffff;
-    border-color: #da3633;
+    color: #ff9f1c; /* turuncu */
 }
 
 #score {
@@ -123,12 +118,10 @@ let selectedLeft = null;
 let selectedRight = null;
 let score = 0;
 
-// 🔀 KARIŞTIR
 function shuffle(arr) {
     return arr.sort(() => Math.random() - 0.5);
 }
 
-// 🎴 KARTLARI ÇİZ
 function render() {
     const leftCol = document.getElementById("left");
     const rightCol = document.getElementById("right");
@@ -153,14 +146,12 @@ function render() {
     });
 }
 
-// 🔄 RENK SIFIRLA
 function resetCards() {
     document.querySelectorAll(".card").forEach(card => {
         card.classList.remove("wrong", "selected");
     });
 }
 
-// 👈 SOL
 function selectLeft(el, value) {
     resetCards();
     document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
@@ -169,7 +160,6 @@ function selectLeft(el, value) {
     check();
 }
 
-// 👉 SAĞ
 function selectRight(el, value) {
     resetCards();
     document.querySelectorAll("#right .card").forEach(c => c.classList.remove("selected"));
@@ -178,7 +168,6 @@ function selectRight(el, value) {
     check();
 }
 
-// ✅ / ❌ KONTROL
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
@@ -211,10 +200,10 @@ function check() {
     selectedRight = null;
 }
 
-// 🚀 BAŞLAT
 render();
 </script>
 
 </body>
 </html>
+
 
