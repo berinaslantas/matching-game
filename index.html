@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Eşleştirme Oyunu</title>
 
-<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -59,21 +58,23 @@ h1 {
     color: #ffffff;
     border-color: #238636;
 }
+
 .card.wrong {
     background: #da3633;
     color: #ffffff;
     border-color: #da3633;
 }
+
 #score {
     margin-top: 16px;
     font-size: 20px;
     color: #8b949e;
 }
 </style>
-
 </head>
 
 <body>
+
 <h1>🔗 Eşleştirme Oyunu</h1>
 
 <div class="game">
@@ -84,7 +85,6 @@ h1 {
 <div id="score">Skor: 0</div>
 
 <script>
-    <script>
 // 🔊 STREAK & SES MOTORU
 let streak = 0;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -94,11 +94,7 @@ function playStreakSound() {
     const gainNode = audioCtx.createGain();
 
     oscillator.type = "sine";
-
-    const baseFrequency = 520;
-    const frequencyStep = 60;
-
-    oscillator.frequency.value = baseFrequency + (streak * frequencyStep);
+    oscillator.frequency.value = 520 + (streak * 60);
 
     gainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.03);
@@ -164,7 +160,7 @@ function resetCards() {
     });
 }
 
-// 👈 SOL SEÇİM
+// 👈 SOL
 function selectLeft(el, value) {
     resetCards();
     document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
@@ -173,7 +169,7 @@ function selectLeft(el, value) {
     check();
 }
 
-// 👉 SAĞ SEÇİM
+// 👉 SAĞ
 function selectRight(el, value) {
     resetCards();
     document.querySelectorAll("#right .card").forEach(c => c.classList.remove("selected"));
@@ -182,7 +178,7 @@ function selectRight(el, value) {
     check();
 }
 
-// ✅ / ❌ EŞLEŞME KONTROL
+// ✅ / ❌ KONTROL
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
@@ -204,7 +200,6 @@ function check() {
         rightCard.classList.add("correct");
 
         pairs = pairs.filter(p => p !== match);
-
         setTimeout(render, 180);
     } else {
         resetStreak();
@@ -222,8 +217,4 @@ render();
 
 </body>
 </html>
-
-
-
-
 
