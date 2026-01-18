@@ -24,10 +24,22 @@ h1 {
     margin-bottom: 12px;
 }
 
+#unitSelect, #startBtn {
+    margin: 8px;
+    padding: 6px 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    background: #161b22;
+    color: #c9d1d9;
+    cursor: pointer;
+}
+
 .game {
     display: flex;
     justify-content: space-between;
     gap: 12px;
+    margin-top: 12px;
 }
 
 .column {
@@ -54,16 +66,16 @@ h1 {
     border-color: #58a6ff;
 }
 
-/* Doğru eşleşme: yeşil */
+/* Doğru eşleşme: yeşil kelime */
 .card.correct {
-    background: #161b22; /* buton değil kelimenin arkaplanı aynı kalsın */
+    background: #161b22;
     color: #238636;
     border-color: #238636;
 }
 
-/* Yanlış eşleşme: koyu turuncu */
+/* Yanlış eşleşme: koyu turuncu kelime */
 .card.wrong {
-    background: #161b22; 
+    background: #161b22;
     color: #d97706;
     border-color: #d97706;
 }
@@ -79,6 +91,14 @@ h1 {
 <body>
 <h1>🔗 Eşleştirme Oyunu</h1>
 
+<div>
+    <select id="unitSelect">
+        <option value="Tarih">Tarih</option>
+        <option value="Matematik">Matematik</option>
+    </select>
+    <button id="startBtn">Başlat</button>
+</div>
+
 <div class="game">
     <div class="column" id="left"></div>
     <div class="column" id="right"></div>
@@ -91,27 +111,28 @@ let streak = 0;
 let score = 0;
 let selectedLeft = null;
 let selectedRight = null;
+let pairs = [];
 
 // Web Audio Context
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// OYUN VERİSİ
-let pairs = [
-    { left: "Apple", right: "Elma" },
-    { left: "House", right: "Ev" },
-    { left: "Car", right: "Araba" },
-    { left: "Cat", right: "Kedi" }
-];
+// ÜNİTE & KELİME VERİSİ
+const units = {
+    "Tarih": [
+        { left: "Mustafa Kemal", right: "Atatürk" },
+        { left: "Cumhuriyet", right: "1923" },
+        { left: "İnkılap", right: "Devrim" }
+    ],
+    "Matematik": [
+        { left: "2+2", right: "4" },
+        { left: "5*3", right: "15" },
+        { left: "10-6", right: "4" }
+    ]
+};
 
 // SES FONKSİYONLARI
 function playDing() {
-    // Doğru seçim
-    const freqs = [
-        880 + streak * 50,
-        1320 + streak * 30,
-        1760 + streak * 20
-    ];
-
+    const freqs = [880 + streak*50, 1320 + streak*30, 1760 + streak*20];
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
@@ -129,9 +150,7 @@ function playDing() {
 }
 
 function playDong() {
-    // Yanlış seçim
-    const freqs = [440, 220, 110]; // daha düşük tonlar
-
+    const freqs = [440, 220, 110];
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
@@ -148,19 +167,14 @@ function playDong() {
     });
 }
 
-function resetStreak() {
-    streak = 0;
-}
+function resetStreak() { streak = 0; }
 
-// KARTLARI ÇİZ
-function shuffle(arr) {
-    return arr.sort(() => Math.random() - 0.5);
-}
+// KARTLARI ÇİZME
+function shuffle(arr) { return arr.sort(() => Math.random()-0.5); }
 
 function render() {
     const leftCol = document.getElementById("left");
     const rightCol = document.getElementById("right");
-
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
 
@@ -208,10 +222,8 @@ function selectRight(el, value) {
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
-    const leftCard = [...document.querySelectorAll("#left .card")]
-        .find(c => c.innerText === selectedLeft);
-    const rightCard = [...document.querySelectorAll("#right .card")]
-        .find(c => c.innerText === selectedRight);
+    const leftCard = [...document.querySelectorAll("#left .card")].find(c => c.innerText === selectedLeft);
+    const rightCard = [...document.querySelectorAll("#right .card")].find(c => c.innerText === selectedRight);
 
     const match = pairs.find(p => p.left === selectedLeft && p.right === selectedRight);
 
@@ -225,7 +237,6 @@ function check() {
         rightCard.classList.add("correct");
 
         pairs = pairs.filter(p => p !== match);
-
         setTimeout(render, 180);
     } else {
         resetStreak();
@@ -238,9 +249,15 @@ function check() {
     selectedRight = null;
 }
 
-// OYUNU BAŞLAT
-render();
+// ÜNİTE BAŞLATMA
+document.getElementById("startBtn").onclick = function() {
+    const unitName = document.getElementById("unitSelect").value;
+    pairs = [...units[unitName]];
+    streak = 0;
+    score = 0;
+    document.getElementById("score").innerText = "Skor: " + score;
+    render();
+};
 </script>
-
 </body>
 </html>
