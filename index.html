@@ -57,7 +57,7 @@ h1 {
 }
 
 .card.wrong {
-    color: #ff9f1c; /* turuncu */
+    color: #d97706; /* turuncu */
 }
 
 #score {
@@ -85,21 +85,28 @@ let streak = 0;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playStreakSound() {
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
 
-    oscillator.type = "sine";
-    oscillator.frequency.value = 520 + (streak * 60);
+    // 🔔 Ding hissi
+    osc.type = "triangle";
 
-    gainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.03);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+    const baseFreq = 650;
+    const step = 70;
+    const freq = baseFreq + (streak * step);
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.15, audioCtx.currentTime + 0.08);
 
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.18);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
 }
 
 function resetStreak() {
@@ -205,5 +212,6 @@ render();
 
 </body>
 </html>
+
 
 
