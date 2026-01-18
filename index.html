@@ -123,7 +123,15 @@ function render() {
     });
 }
 
+<script>
+function resetCards() {
+    document.querySelectorAll(".card").forEach(card => {
+        card.classList.remove("wrong", "selected");
+    });
+}
+
 function selectLeft(el, value) {
+    resetCards();
     document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
     el.classList.add("selected");
     selectedLeft = value;
@@ -131,30 +139,51 @@ function selectLeft(el, value) {
 }
 
 function selectRight(el, value) {
+    resetCards();
     document.querySelectorAll("#right .card").forEach(c => c.classList.remove("selected"));
     el.classList.add("selected");
     selectedRight = value;
     check();
 }
+</script>
 
+<script>
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
+    const leftCard = [...document.querySelectorAll("#left .card")]
+        .find(c => c.innerText === selectedLeft);
+    const rightCard = [...document.querySelectorAll("#right .card")]
+        .find(c => c.innerText === selectedRight);
+
     const match = pairs.find(p => p.left === selectedLeft && p.right === selectedRight);
+
     if (match) {
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
+
+        leftCard.classList.add("correct");
+        rightCard.classList.add("correct");
+
         pairs.splice(pairs.indexOf(match), 1);
-        setTimeout(render, 400);
+
+        // ✅ ONAY SÜRESİ KISALTILDI (400ms → 180ms)
+        setTimeout(render, 180);
+    } else {
+        // ❌ YANLIŞ EŞLEŞME
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
     }
 
     selectedLeft = null;
     selectedRight = null;
 }
+</script>
 
 render();
 </script>
 </body>
 </html>
+
 
 
