@@ -149,21 +149,20 @@ function playDing() {
 }
 
 function playDong() {
-    // Yanlış seçim → tiz ve kısa ses
-    const freqs = [660, 880, 990]; // tiz frekanslar
+    const freqs = [440, 220, 110];
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3); // daha kısa
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
     gain.connect(audioCtx.destination);
 
     freqs.forEach(f => {
         const osc = audioCtx.createOscillator();
-        osc.type = "sine"; 
+        osc.type = "sine";
         osc.frequency.setValueAtTime(f, audioCtx.currentTime);
         osc.connect(gain);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.3);
+        osc.stop(audioCtx.currentTime + 0.6);
     });
 }
 
@@ -261,3 +260,4 @@ document.getElementById("startBtn").onclick = function() {
 </script>
 </body>
 </html>
+
