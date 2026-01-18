@@ -24,7 +24,7 @@ h1 {
     margin-bottom: 12px;
 }
 
-#unitSelect, #startBtn {
+#mainUnitSelect, #subUnitSelect, #startBtn {
     margin: 8px;
     padding: 6px 12px;
     font-size: 16px;
@@ -92,10 +92,11 @@ h1 {
 <h1>🔗 Eşleştirme Oyunu</h1>
 
 <div>
-    <select id="unitSelect">
+    <select id="mainUnitSelect">
         <option value="Tarih">Tarih</option>
         <option value="Matematik">Matematik</option>
     </select>
+    <select id="subUnitSelect"></select>
     <button id="startBtn">Başlat</button>
 </div>
 
@@ -115,23 +116,41 @@ let pairs = [];
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// ÜNİTE & KELİME VERİSİ
+// ÜNİTE & ALT ÜNİTE VERİSİ
 const units = {
-    "Tarih": [
-        { left: "Mustafa Kemal", right: "Atatürk" },
-        { left: "Cumhuriyet", right: "1923" },
-        { left: "İnkılap", right: "Devrim" }
-    ],
-    "Matematik": [
-        { left: "2+2", right: "4" },
-        { left: "5*3", right: "15" },
-        { left: "10-6", right: "4" }
-    ]
+    "İslamiyet Öncesi Türk Tarihi": {
+        "Türk adının anlamları": [
+            { left: "Wambery", right: "Türemek" },
+            { left: "Doerfer", right: "Devlete bağlı halk" },
+            { left: "Kaşgarlı Mahmut", right: "Olgunluk Çağı" },
+            { left: "İran Kaynakları", right: "Güzel İnsan" },
+            { left: "Çin Kaynakları", right: "Miğfer" },
+            { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
+            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
+        ],
+        "Orta Asya Kültür Merkezleri": [
+            { left: "Anav", right: "en eski (At ilk kez)" },
+            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" }
+            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
+            { left: "Andronova", right: "Türk atalarının yaşadığı" },
+            { left: "Karasuk", right: "ilk demir işlendiği yer" }
+            { left: "Kelteminar", right: "yerleşik yaşam" },
+        ]
+    },
+    "Matematik": {
+        "1. Ünite": [
+            { left: "2+2", right: "4" },
+            { left: "5*3", right: "15" }
+        ],
+        "2. Ünite": [
+            { left: "10-6", right: "4" },
+            { left: "12/3", right: "4" }
+        ]
+    }
 };
 
 // SES FONKSİYONLARI
 function playDing() {
-    // Doğru cevap için tok, kısa ding
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
@@ -139,8 +158,8 @@ function playDing() {
     gain.connect(audioCtx.destination);
 
     const osc = audioCtx.createOscillator();
-    osc.type = "triangle"; // tok ve doğal ton
-    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime); // kalın ve tatmin edici
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime);
     osc.connect(gain);
     osc.start();
     osc.stop(audioCtx.currentTime + 0.35);
@@ -246,10 +265,30 @@ function check() {
     selectedRight = null;
 }
 
+// ALT ÜNİTE DOLDURMA
+const mainUnitSelect = document.getElementById("mainUnitSelect");
+const subUnitSelect = document.getElementById("subUnitSelect");
+
+function updateSubUnits() {
+    const mainUnit = mainUnitSelect.value;
+    subUnitSelect.innerHTML = "";
+    Object.keys(units[mainUnit]).forEach(sub => {
+        const opt = document.createElement("option");
+        opt.value = sub;
+        opt.innerText = sub;
+        subUnitSelect.appendChild(opt);
+    });
+}
+
+// Başlangıçta alt üniteleri doldur
+updateSubUnits();
+mainUnitSelect.onchange = updateSubUnits;
+
 // ÜNİTE BAŞLATMA
 document.getElementById("startBtn").onclick = function() {
-    const unitName = document.getElementById("unitSelect").value;
-    pairs = [...units[unitName]];
+    const mainUnit = mainUnitSelect.value;
+    const subUnit = subUnitSelect.value;
+    pairs = [...units[mainUnit][subUnit]]; 
     streak = 0;
     score = 0;
     document.getElementById("score").innerText = "Skor: " + score;
@@ -258,5 +297,3 @@ document.getElementById("startBtn").onclick = function() {
 </script>
 </body>
 </html>
-
-
