@@ -84,6 +84,36 @@ h1 {
 <div id="score">Skor: 0</div>
 
 <script>
+    // 🔊 STREAK & SES MOTORU
+let streak = 0;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playStreakSound() {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = "sine";
+
+    const baseFrequency = 520;
+    const frequencyStep = 60;
+
+    oscillator.frequency.value = baseFrequency + (streak * frequencyStep);
+
+    gainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.03);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.3);
+}
+
+function resetStreak() {
+    streak = 0;
+}
+
 const pairs = [
     { left: "Apple", right: "Elma" },
     { left: "House", right: "Ev" },
@@ -158,22 +188,25 @@ function check() {
 
     const match = pairs.find(p => p.left === selectedLeft && p.right === selectedRight);
 
-    if (match) {
-        score++;
-        document.getElementById("score").innerText = "Skor: " + score;
+   if (match) {
+    streak++;
+    playStreakSound();
 
-        leftCard.classList.add("correct");
-        rightCard.classList.add("correct");
+    score++;
+    document.getElementById("score").innerText = "Skor: " + score;
 
-        pairs.splice(pairs.indexOf(match), 1);
+    leftCard.classList.add("correct");
+    rightCard.classList.add("correct");
 
-        // ✅ ONAY SÜRESİ KISALTILDI (400ms → 180ms)
-        setTimeout(render, 180);
-    } else {
-        // ❌ YANLIŞ EŞLEŞME
-        leftCard.classList.add("wrong");
-        rightCard.classList.add("wrong");
-    }
+    pairs.splice(pairs.indexOf(match), 1);
+
+    setTimeout(render, 180);
+} else {
+    resetStreak();
+    leftCard.classList.add("wrong");
+    rightCard.classList.add("wrong");
+}
+
 
     selectedLeft = null;
     selectedRight = null;
@@ -184,6 +217,7 @@ render();
 </script>
 </body>
 </html>
+
 
 
 
