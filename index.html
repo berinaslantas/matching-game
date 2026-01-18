@@ -84,7 +84,8 @@ h1 {
 <div id="score">Skor: 0</div>
 
 <script>
-    // 🔊 STREAK & SES MOTORU
+    <script>
+// 🔊 STREAK & SES MOTORU
 let streak = 0;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -114,7 +115,8 @@ function resetStreak() {
     streak = 0;
 }
 
-const pairs = [
+// 🧠 OYUN VERİSİ
+let pairs = [
     { left: "Apple", right: "Elma" },
     { left: "House", right: "Ev" },
     { left: "Car", right: "Araba" },
@@ -125,10 +127,12 @@ let selectedLeft = null;
 let selectedRight = null;
 let score = 0;
 
+// 🔀 KARIŞTIR
 function shuffle(arr) {
     return arr.sort(() => Math.random() - 0.5);
 }
 
+// 🎴 KARTLARI ÇİZ
 function render() {
     const leftCol = document.getElementById("left");
     const rightCol = document.getElementById("right");
@@ -153,13 +157,14 @@ function render() {
     });
 }
 
-<script>
+// 🔄 RENK SIFIRLA
 function resetCards() {
     document.querySelectorAll(".card").forEach(card => {
         card.classList.remove("wrong", "selected");
     });
 }
 
+// 👈 SOL SEÇİM
 function selectLeft(el, value) {
     resetCards();
     document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
@@ -168,6 +173,7 @@ function selectLeft(el, value) {
     check();
 }
 
+// 👉 SAĞ SEÇİM
 function selectRight(el, value) {
     resetCards();
     document.querySelectorAll("#right .card").forEach(c => c.classList.remove("selected"));
@@ -175,9 +181,8 @@ function selectRight(el, value) {
     selectedRight = value;
     check();
 }
-</script>
 
-<script>
+// ✅ / ❌ EŞLEŞME KONTROL
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
@@ -188,35 +193,36 @@ function check() {
 
     const match = pairs.find(p => p.left === selectedLeft && p.right === selectedRight);
 
-   if (match) {
-    streak++;
-    playStreakSound();
+    if (match) {
+        streak++;
+        playStreakSound();
 
-    score++;
-    document.getElementById("score").innerText = "Skor: " + score;
+        score++;
+        document.getElementById("score").innerText = "Skor: " + score;
 
-    leftCard.classList.add("correct");
-    rightCard.classList.add("correct");
+        leftCard.classList.add("correct");
+        rightCard.classList.add("correct");
 
-    pairs.splice(pairs.indexOf(match), 1);
+        pairs = pairs.filter(p => p !== match);
 
-    setTimeout(render, 180);
-} else {
-    resetStreak();
-    leftCard.classList.add("wrong");
-    rightCard.classList.add("wrong");
-}
-
+        setTimeout(render, 180);
+    } else {
+        resetStreak();
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
+    }
 
     selectedLeft = null;
     selectedRight = null;
 }
-</script>
 
+// 🚀 BAŞLAT
 render();
 </script>
+
 </body>
 </html>
+
 
 
 
