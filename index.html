@@ -131,28 +131,30 @@ const units = {
 
 // SES FONKSİYONLARI
 function playDing() {
-    // Duolingo tarzı, biraz daha kalın ding
+    const freqs = [880 + streak*50, 1320 + streak*30, 1760 + streak*20];
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
     gain.connect(audioCtx.destination);
 
-    const osc = audioCtx.createOscillator();
-    osc.type = "square"; // tok, bas tonlu
-    osc.frequency.setValueAtTime(750 + streak*20, audioCtx.currentTime); // kalın ton
-    osc.connect(gain);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.35);
+    freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+    });
 }
 
 function playDong() {
-    // Yanlış seçim → tiz ve kısa ses (eski hali)
-    const freqs = [660, 880, 990];
+    // Yanlış seçim → tiz ve kısa ses
+    const freqs = [660, 880, 990]; // tiz frekanslar
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3); // daha kısa
     gain.connect(audioCtx.destination);
 
     freqs.forEach(f => {
@@ -227,7 +229,7 @@ function check() {
 
     if (match) {
         streak++;
-        playDing(); // ✅ Doğru ses (kalın ding)
+        playDing();
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
 
@@ -238,7 +240,7 @@ function check() {
         setTimeout(render, 180);
     } else {
         resetStreak();
-        playDong(); // ❌ Yanlış ses (tiz dong)
+        playDong();
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
     }
