@@ -62,6 +62,7 @@ select, button {
     </select>
     <select id="subUnitSelect"></select>
     <button id="startBtn">Başlat</button>
+    <button id="wrongsBtn">Genel Yanlışlar</button>
 </div>
 
 <div class="game">
@@ -78,6 +79,7 @@ let score = 0;
 let selectedLeft = null;
 let selectedRight = null;
 let pairs = [];
+let isGeneralWrongsMode = false;
 
 const STORAGE_KEY = "matching_game_progress_v1";
 const generalWrongs = new Map();
@@ -289,9 +291,35 @@ startBtn.onclick = () => {
     const s = subUnitSelect.value;
     pairs = units[m][s].map(q => q);
     score = 0;
+    streak = 0;
+    isGeneralWrongsMode = false;
     document.getElementById("score").innerText = "Skor: 0";
     render();
 };
+
+/* ===== GENEL YANLIŞLAR ===== */
+function startGeneralWrongsMode() {
+    if (generalWrongs.size === 0) {
+        alert("Genel yanlış yok 🎉");
+        return;
+    }
+
+    isGeneralWrongsMode = true;
+
+    pairs = [];
+    generalWrongs.forEach((_, key) => {
+        const [left, right] = key.split("||");
+        pairs.push({ left, right });
+    });
+
+    score = 0;
+    streak = 0;
+    document.getElementById("score").innerText = "Genel Yanlışlar";
+
+    render();
+}
+
+wrongsBtn.onclick = startGeneralWrongsMode;
 
 /* ===== BAŞLAT ===== */
 buildIndex();
@@ -299,4 +327,3 @@ loadProgress();
 </script>
 </body>
 </html>
-
