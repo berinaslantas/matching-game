@@ -35,9 +35,10 @@ select, button {
     border: 1px solid #30363d;
     cursor: pointer;
     transition: 0.15s;
-    color: #c9d1d9; /* varsayılan yazı rengi */
 }
 .card.selected { border-color: #58a6ff; }
+.card.correct { background:#2ea043; border-color:#2ea043; color:#2ea043; }
+.card.wrong { background:#663300; border-color:#ff7f0e; color:#ff7f0e; }
 </style>
 </head>
 <body>
@@ -85,8 +86,9 @@ function playCorrect() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = "triangle";
+    // Streak’e bağlı olarak frekansı artır
     let freq = 800 * (1 + streak*0.2);
-    if (freq > 2000) freq = 2000;
+    if (freq > 2000) freq = 2000; // maksimum sınır
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
     gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
@@ -96,11 +98,11 @@ function playCorrect() {
 }
 
 function playWrong() {
-    streak = 0;
+    streak = 0; // yanlış streaki sıfırlar
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(180, audioCtx.currentTime); // bas dongumsu
     gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
     osc.connect(gain).connect(audioCtx.destination);
@@ -164,7 +166,6 @@ function render() {
         const d = document.createElement("div");
         d.className = "card";
         d.innerText = p.left;
-        d.style.color = "#c9d1d9";
         d.onclick = () => { selLeft = p; select(d); };
         leftCol.appendChild(d);
     });
@@ -173,7 +174,6 @@ function render() {
         const d = document.createElement("div");
         d.className = "card";
         d.innerText = p.right;
-        d.style.color = "#c9d1d9";
         d.onclick = () => { selRight = p; select(d); };
         rightCol.appendChild(d);
     });
@@ -191,8 +191,8 @@ function check() {
     const correct = selLeft.right === selRight.right;
 
     if (correct) {
-        l.style.color = "#238636";
-        r.style.color = "#238636";
+        l.classList.add("correct");
+        r.classList.add("correct");
         playCorrect();
         markCorrect(selLeft);
 
@@ -203,14 +203,14 @@ function check() {
             render();
         }, 180);
     } else {
-        l.style.color = "#b45309";
-        r.style.color = "#b45309";
+        l.classList.add("wrong");
+        r.classList.add("wrong");
         playWrong();
         markWrong(selLeft);
 
         setTimeout(() => {
-            l.style.color = "#c9d1d9";
-            r.style.color = "#c9d1d9";
+            l.classList.remove("wrong");
+            r.classList.remove("wrong");
             selLeft = selRight = null;
         }, 300);
     }
