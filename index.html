@@ -27,7 +27,7 @@ select, button {
 }
 .column { width: 50%; }
 .card {
-    background: #161b22;
+    background: #161b22; /* ARKA PLAN SABİT */
     padding: 14px;
     margin: 8px 0;
     border-radius: 10px;
@@ -103,11 +103,22 @@ function playDong() {
 }
 
 /* ===== GENEL YANLIŞLAR ===== */
-const STORAGE_KEY = "general_wrongs_v2";
+const STORAGE_KEY = "general_wrongs_v3";
 let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 function saveWrongs(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
-function markWrong(p){ const k=p.left+"||"+p.right; if(!generalWrongs[k]) generalWrongs[k]={pair:p,wrong:0,correct:0}; generalWrongs[k].wrong++; saveWrongs(); }
-function markCorrect(p){ const k=p.left+"||"+p.right; if(!generalWrongs[k]) return; generalWrongs[k].correct++; if(generalWrongs[k].correct>=2) delete generalWrongs[k]; saveWrongs(); }
+function markWrong(p){ 
+    const k=p.left+"||"+p.right; 
+    if(!generalWrongs[k]) generalWrongs[k]={pair:p,wrong:0,correct:0}; 
+    generalWrongs[k].wrong++; 
+    saveWrongs(); 
+}
+function markCorrect(p){ 
+    const k=p.left+"||"+p.right; 
+    if(!generalWrongs[k]) return; 
+    generalWrongs[k].correct++; 
+    if(generalWrongs[k].correct>=2) delete generalWrongs[k]; 
+    saveWrongs(); 
+}
 
 /* ===== OYUN ===== */
 function shuffle(a){return a.sort(()=>Math.random()-0.5);}
@@ -139,6 +150,7 @@ function render(){
 }
 
 function select(el){
+    // sadece seçili işareti (border) sıfırla, renkler kalır
     document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
     el.classList.add("selected");
     if(selLeft && selRight) check();
@@ -148,13 +160,15 @@ function check(){
     const l = [...leftCol.children].find(c=>c.innerText===selLeft.left);
     const r = [...rightCol.children].find(c=>c.innerText===selRight.right);
     const rights = Array.isArray(selLeft.right)?selLeft.right:[selLeft.right];
+
     if(rights.includes(selRight.right)){
         streak++;
         playDing();
-        l.classList.add("correct"); r.classList.add("correct");
-        // tüm doğru eşleşmeleri yeşil yap
+        l.style.color="#238636"; 
+        r.style.color="#238636";
+        // diğer doğru eşleşmeleri de yeşil yap
         rights.forEach(val=>{
-            [...rightCol.children].filter(c=>c.innerText===val).forEach(c=>c.classList.add("correct"));
+            [...rightCol.children].filter(c=>c.innerText===val).forEach(c=>c.style.color="#238636");
         });
         markCorrect(selLeft);
         setTimeout(()=>{
@@ -165,10 +179,13 @@ function check(){
         },180);
     }else{
         streak=0;
-        l.classList.add("wrong"); r.classList.add("wrong");
+        l.style.color="#b45309"; 
+        r.style.color="#b45309";
         playDong(); markWrong(selLeft);
         setTimeout(()=>{
-            l.classList.remove("wrong"); r.classList.remove("wrong");
+            // renkleri eski haline döndür
+            l.style.color="#c9d1d9";
+            r.style.color="#c9d1d9";
             selLeft=selRight=null;
         },300);
     }
