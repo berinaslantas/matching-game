@@ -216,40 +216,80 @@ function select(el) {
 
     if (selLeft && selRight) check();
 }
+    
+function loadNextPage() {
+    currentPagePairs = pairs.splice(0, PAGE_SIZE);
+    render();
+}
+
 
 function check() {
-    const correct = selLeft.right === selRight.right;
+    if (!selectedLeft || !selectedRight) return;
 
-    const l = [...leftCol.children].find(c => c.innerText === selLeft.left);
-    const r = [...rightCol.children].find(c => c.innerText === selRight.right);
+    const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
+    const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
+
+    // ÇOKLU DOĞRU DESTEKLİ KONTROL
+    const correct =
+        selectedLeft.left === selectedRight.left ||
+        selectedLeft.right === selectedRight.right ||
+        (Array.isArray(selectedLeft.right) &&
+         selectedLeft.right.includes(selectedRight.right));
 
     if (correct) {
-        l.classList.add("correct");
-        r.classList.add("correct");
-        ding();
+        streak++;
+        score++;
+        document.getElementById("score").innerText = "Skor: " + score;
+
+        // YEŞİL EFEKT + SES
+        leftCard.classList.add("correct");
+        rightCard.classList.add("correct");
+        playDing();
+
+        // ⏱️ KISA BEKLE → SADECE DOĞRU OLANI SİL
+        setTimeout(() => {
+            // sadece eşleşen sol-left silinir
+            currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
+
+            // havuzdan SADECE 1 YENİ SORU EKLE
+            if (pairs.length > 0) {
+                currentPagePairs.push(pairs.shift());
+            }
+
+            selectedLeft = null;
+            selectedRight = null;
+
+            render(); // sol sabit, sağ karışık
+
+            // Ünite bittiyse
+            if (currentPagePairs.length === 0 && pairs.length === 0) {
+                if (confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) {
+                    startNextUnit();
+                }
+            }
+        }, 220);
+
+    } else {
+        // YANLIŞ
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
+        playDong();
 
         setTimeout(() => {
-            active = active.filter(p => p !== selLeft);
-            if (pool.length) active.push(pool.shift());
-            selLeft = selRight = null;
-            render();
-        }, 200);
-    } else {
-        l.classList.add("wrong");
-        r.classList.add("wrong");
-        dong();
-        setTimeout(() => {
-            l.classList.remove("wrong");
-            r.classList.remove("wrong");
-            selLeft = selRight = null;
-        }, 300);
+            leftCard.classList.remove("wrong");
+            rightCard.classList.remove("wrong");
+            selectedLeft = null;
+            selectedRight = null;
+        }, 400);
     }
 }
+
 
 fillSelectors();
 </script>
 </body>
 </html>
+
 
 
 
