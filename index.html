@@ -249,26 +249,24 @@ function select(el) {
 }
 
 function check() {
-    const rightMatches = active.filter(p => p.left === selLeft.left).map(p => p.right);
-    const correct = rightMatches.includes(selRight.right);
+    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left);
+    const rCard = [...rightCol.children].find(c => c.innerText === selRight.right);
+
+    const correct = selLeft.right === selRight.right;
 
     if (correct) {
-        // Hepsini yeşil yap
-        [...leftCol.children].forEach(c => {
-            if (c.innerText === selLeft.left) c.style.color = "#2ea043";
-        });
-        [...rightCol.children].forEach(c => {
-            if (rightMatches.includes(c.innerText)) c.style.color = "#2ea043";
-        });
+        // Yalnızca seçilen pair'leri yeşil yap
+        lCard.style.color = "#2ea043";
+        rCard.style.color = "#2ea043";
 
         playCorrect();
         markCorrect(selLeft);
 
         setTimeout(() => {
-            // sadece eşleşenleri aktiften sil
-            active = active.filter(p => !(p.left === selLeft.left && rightMatches.includes(p.right)));
+            // sadece seçilen pair'i aktiften sil
+            active = active.filter(p => !(p.left === selLeft.left && p.right === selRight.right));
 
-            // pool’dan yeni kart ekle
+            // pool'dan yeni pair ekle
             while (active.length < PAGE_SIZE && pool.length > 0) {
                 active.push(pool.shift());
             }
@@ -277,26 +275,26 @@ function check() {
             render();
         }, 180);
     } else {
-        // Yanlışta turuncu
-        const rCard = [...rightCol.children].find(c => c.innerText === selRight.right);
-        [...leftCol.children].forEach(c => { if (c.innerText === selLeft.left) c.style.color = "#ff7f0e"; });
-        if (rCard) rCard.style.color = "#ff7f0e";
+        // Yanlışsa turuncu
+        lCard.style.color = "#ff7f0e";
+        rCard.style.color = "#ff7f0e";
 
         playWrong();
         markWrong(selLeft);
 
         setTimeout(() => {
-            // renkleri sıfırla
-            [...leftCol.children].forEach(c => { if (c.innerText === selLeft.left) c.style.color = "#c9d1d9"; });
-            if (rCard) rCard.style.color = "#c9d1d9";
+            lCard.style.color = "#c9d1d9";
+            rCard.style.color = "#c9d1d9";
             selLeft = selRight = null;
         }, 300);
     }
 }
 
+
 fillSelectors();
 </script>
 </body>
 </html>
+
 
 
