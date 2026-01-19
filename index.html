@@ -43,6 +43,7 @@ select, button {
     border: 1px solid #30363d;
     font-size: 18px;
     cursor: pointer;
+    transition: all 0.15s ease;
 }
 .card.selected { border-color: #58a6ff; }
 .card.correct { color: #238636; border-color: #238636; }
@@ -71,9 +72,7 @@ select, button {
 <div id="score">Skor: 0</div>
 
 <script>
-/* =====================
-   GLOBAL DEĞİŞKENLER
-===================== */
+/* ===== GLOBAL ===== */
 let streak = 0;
 let score = 0;
 let selectedLeft = null;
@@ -82,13 +81,45 @@ let pairs = [];
 
 const STORAGE_KEY = "matching_game_progress_v1";
 const generalWrongs = new Map();
-const allQuestions = {};
+const statsIndex = {};
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-/* =====================
-   ÜNİTE VERİLERİ
-===================== */
+/* ===== SES (ORİJİNAL) ===== */
+function playDing() {
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+    gain.connect(audioCtx.destination);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+}
+
+function playDong() {
+    const freqs = [440, 220, 110];
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    gain.connect(audioCtx.destination);
+
+    freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+    });
+}
+
+/* ===== VERİ ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -96,57 +127,29 @@ const units = {
             { left: "Doerfer", right: "Devlete bağlı halk" },
             { left: "Kaşgarlı Mahmut", right: "Olgunluk Çağı" },
             { left: "İran Kaynakları", right: "Güzel İnsan" },
-            { left: "Çin Kaynakları", right: "Miğfer" },
-            { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
-            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
-        ],
-        "Orta Asya Kültür Merkezleri": [
-            { left: "Anav", right: "en eski (At ilk kez)" },
-            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
-            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
-            { left: "Andronova", right: "Türk atalarının yaşadığı" },
-            { left: "Karasuk", right: "ilk demir işlendiği yer" },
-            { left: "Kelteminar", right: "yerleşik yaşam" }
-        ],
-        "Boylar": [
-            { left: "Anav", right: "en eski (At ilk kez)" },
-            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
-            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
-            { left: "Andronova", right: "Türk atalarının yaşadığı" },
-            { left: "Karasuk", right: "ilk demir işlendiği yer" },
-            { left: "Kelteminar", right: "yerleşik yaşam" }
-        ]
-    },
-    "Matematik": {
-        "1. Ünite": [
-            { left: "2+2", right: "4" },
-            { left: "5*3", right: "15" }
+            { left: "Çin Kaynakları", right: "Miğfer" }
         ]
     }
 };
 
-/* =====================
-   INDEX OLUŞTUR
-===================== */
+/* ===== INDEX ===== */
 function buildIndex() {
     Object.values(units).forEach(u =>
         Object.values(u).forEach(list =>
             list.forEach(q => {
                 const k = q.left + "||" + q.right;
-                if (!allQuestions[k]) {
-                    allQuestions[k] = { ...q, wrongCount: 0, correctInWrongs: 0 };
+                if (!statsIndex[k]) {
+                    statsIndex[k] = { wrongCount: 0, correctInWrongs: 0 };
                 }
             })
         )
     );
 }
 
-/* =====================
-   LOCALSTORAGE
-===================== */
+/* ===== STORAGE ===== */
 function saveProgress() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        questions: Object.values(allQuestions),
+        statsIndex,
         generalWrongs: [...generalWrongs.keys()]
     }));
 }
@@ -155,49 +158,18 @@ function loadProgress() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const data = JSON.parse(raw);
-
-    data.questions.forEach(q => {
-        const k = q.left + "||" + q.right;
-        if (allQuestions[k]) {
-            allQuestions[k].wrongCount = q.wrongCount;
-            allQuestions[k].correctInWrongs = q.correctInWrongs;
-        }
-    });
-
-    data.generalWrongs.forEach(k => {
-        if (allQuestions[k]) generalWrongs.set(k, allQuestions[k]);
-    });
+    Object.assign(statsIndex, data.statsIndex || {});
+    (data.generalWrongs || []).forEach(k => generalWrongs.set(k, true));
 }
 
-/* =====================
-   SES
-===================== */
-function playDing() {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.frequency.value = 700 + streak * 20;
-    g.gain.value = 0.1;
-    o.connect(g);
-    g.connect(audioCtx.destination);
-    o.start();
-    o.stop(audioCtx.currentTime + 0.2);
-}
-
-function playDong() {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.frequency.value = 200;
-    g.gain.value = 0.1;
-    o.connect(g);
-    g.connect(audioCtx.destination);
-    o.start();
-    o.stop(audioCtx.currentTime + 0.4);
-}
-
-/* =====================
-   OYUN
-===================== */
+/* ===== OYUN ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+
+function resetCards() {
+    document.querySelectorAll(".card").forEach(c =>
+        c.classList.remove("selected","wrong")
+    );
+}
 
 function render() {
     left.innerHTML = "";
@@ -206,52 +178,75 @@ function render() {
         const d = document.createElement("div");
         d.className = "card";
         d.innerText = p.left;
-        d.onclick = () => { selectedLeft = p; d.classList.add("selected"); check(); };
+        d.onclick = () => selectLeft(d, p);
         left.appendChild(d);
     });
     shuffle([...pairs]).forEach(p => {
         const d = document.createElement("div");
         d.className = "card";
         d.innerText = p.right;
-        d.onclick = () => { selectedRight = p; d.classList.add("selected"); check(); };
+        d.onclick = () => selectRight(d, p);
         right.appendChild(d);
     });
 }
 
+function selectLeft(el, p) {
+    resetCards();
+    document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedLeft = p;
+    check();
+}
+
+function selectRight(el, p) {
+    resetCards();
+    document.querySelectorAll("#right .card").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedRight = p;
+    check();
+}
+
 function check() {
     if (!selectedLeft || !selectedRight) return;
-    const k = selectedLeft.left + "||" + selectedLeft.right;
-    const stat = allQuestions[k];
+
+    const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
+    const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
+    const key = selectedLeft.left + "||" + selectedLeft.right;
+    const stat = statsIndex[key];
 
     if (selectedLeft.right === selectedRight.right) {
+        streak++;
         playDing();
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
 
-        if (generalWrongs.has(k)) {
+        leftCard.classList.add("correct");
+        rightCard.classList.add("correct");
+
+        if (generalWrongs.has(key)) {
             stat.correctInWrongs++;
             if (stat.correctInWrongs >= 2) {
-                generalWrongs.delete(k);
+                generalWrongs.delete(key);
                 stat.correctInWrongs = 0;
                 stat.wrongCount = 0;
             }
         }
 
         pairs = pairs.filter(p => p !== selectedLeft);
-        setTimeout(render, 120);
+        setTimeout(render, 180);
     } else {
         playDong();
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
         stat.wrongCount++;
-        if (stat.wrongCount >= 3) generalWrongs.set(k, stat);
+        if (stat.wrongCount >= 3) generalWrongs.set(key, true);
     }
 
     saveProgress();
     selectedLeft = selectedRight = null;
 }
 
-/* =====================
-   ÜNİTE SEÇİM
-===================== */
+/* ===== ÜNİTE ===== */
 function updateSubUnits() {
     subUnitSelect.innerHTML = "";
     Object.keys(units[mainUnitSelect.value]).forEach(s => {
@@ -268,15 +263,13 @@ updateSubUnits();
 startBtn.onclick = () => {
     const m = mainUnitSelect.value;
     const s = subUnitSelect.value;
-    pairs = units[m][s].map(q => allQuestions[q.left + "||" + q.right]);
+    pairs = units[m][s].map(q => q);
     score = 0;
     document.getElementById("score").innerText = "Skor: 0";
     render();
 };
 
-/* =====================
-   BAŞLAT
-===================== */
+/* ===== BAŞLAT ===== */
 buildIndex();
 loadProgress();
 </script>
