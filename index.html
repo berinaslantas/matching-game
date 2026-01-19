@@ -78,28 +78,34 @@ let selLeft = null;
 let selRight = null;
 
 /* ===== SESLER ===== */
-const audio = new AudioContext();
-function ding() {
-    const o = audio.createOscillator();
-    const g = audio.createGain();
-    o.frequency.value = 800;
-    g.gain.value = 0.25;
-    o.connect(g).connect(audio.destination);
-    o.start();
-    o.stop(audio.currentTime + 0.15);
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playCorrect() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime); // parlak çın
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
 }
-function dong() {
-    const o = audio.createOscillator();
-    const g = audio.createGain();
-    o.frequency.value = 200;
-    g.gain.value = 0.25;
-    o.connect(g).connect(audio.destination);
-    o.start();
-    o.stop(audio.currentTime + 0.3);
+
+function playWrong() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(180, audioCtx.currentTime); // bas dongumsu
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
 }
 
 /* ===== GENEL YANLIŞLAR ===== */
-const STORAGE_KEY = "general_wrongs_v1";
+const STORAGE_KEY = "general_wrongs_v2";
 let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 function saveWrongs() { localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
 function markWrong(p) {
@@ -118,15 +124,18 @@ function markCorrect(p) {
 
 /* ===== OYUN ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+
 function fillSelectors() {
     mainUnit.innerHTML = "";
     Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
     loadSub();
 }
+
 function loadSub() {
     subUnit.innerHTML = "";
     Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
 }
+
 mainUnit.onchange = loadSub;
 
 function startGame() {
@@ -134,6 +143,7 @@ function startGame() {
     active = pool.splice(0, PAGE_SIZE);
     render();
 }
+
 function startGeneralWrongs() {
     pool = shuffle(Object.values(generalWrongs).map(o => o.pair));
     active = pool.splice(0, PAGE_SIZE);
@@ -175,7 +185,7 @@ function check() {
     if (correct) {
         l.classList.add("correct");
         r.classList.add("correct");
-        ding();
+        playCorrect();
         markCorrect(selLeft);
 
         setTimeout(() => {
@@ -187,7 +197,7 @@ function check() {
     } else {
         l.classList.add("wrong");
         r.classList.add("wrong");
-        dong();
+        playWrong();
         markWrong(selLeft);
 
         setTimeout(() => {
