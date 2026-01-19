@@ -275,9 +275,9 @@ function check() {
     const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
     const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
 
-    // Doğru kontrol (birden fazla doğru olasılığı da destekleyecek şekilde)
+    // Birden fazla doğru cevap varsa kontrol
     let correct = false;
-    if(Array.isArray(selectedLeft.right)) {
+    if(Array.isArray(selectedLeft.right)){
         correct = selectedLeft.right.includes(selectedRight.right);
     } else {
         correct = selectedLeft.right === selectedRight.right;
@@ -293,26 +293,26 @@ function check() {
         rightCard.classList.add("correct");
         playDing();
 
-        // Bir süre yeşil gösterip sonra sil
+        // Bir süre yeşil gösterip sonra sil ve yeni soruları ekle
         setTimeout(() => {
-            // Ekrandan kaldır
+            // Eşleşmeyi kaldır
             currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
-            render();
 
-            // Yeni sorular ekle
-            if(currentPagePairs.length < PAGE_SIZE && pairs.length > 0){
-                const newPairs = shuffle([...pairs]).slice(0, PAGE_SIZE - currentPagePairs.length);
+            // Eksik sayıyı tamamla
+            const needed = PAGE_SIZE - currentPagePairs.length;
+            if(needed > 0 && pairs.length > 0){
+                const newPairs = shuffle([...pairs]).slice(0, needed);
                 currentPagePairs = currentPagePairs.concat(newPairs);
-                // Kaldırdığımız soruları pairs havuzundan da çıkart
+                // Havuzdan çıkart
                 newPairs.forEach(np => pairs = pairs.filter(p => p !== np));
-                render();
             }
+
+            render();
 
             // Ünite bittiğinde
             if(currentPagePairs.length === 0 && pairs.length === 0){
                 if(confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
             }
-
         }, 500);
 
         selectedLeft = selectedRight = null;
@@ -328,6 +328,7 @@ function check() {
         selectedLeft = selectedRight = null;
     }
 }
+
 
 /* ===== SAYFA YÖNETİMİ ===== */
 function loadNextPage() {
@@ -374,5 +375,6 @@ loadProgress();
 </script>
 </body>
 </html>
+
 
 
