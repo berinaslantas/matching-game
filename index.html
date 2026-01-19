@@ -249,13 +249,15 @@ function select(el) {
 }
 
 function check() {
+    // DOM kartları
     const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left);
     const rCard = [...rightCol.children].find(c => c.innerText === selRight.right);
 
+    // doğru kontrolü: sol ve sağ pair tam eşleşmeli
     const correct = selLeft.right === selRight.right;
 
     if (correct) {
-        // Yalnızca seçilen pair'leri yeşil yap
+        // Sadece yazı rengini değiştir
         lCard.style.color = "#2ea043";
         rCard.style.color = "#2ea043";
 
@@ -263,19 +265,21 @@ function check() {
         markCorrect(selLeft);
 
         setTimeout(() => {
-            // sadece seçilen pair'i aktiften sil
+            // sadece seçilen pair'i sil, diğer doğru cevaplar kalır
             active = active.filter(p => !(p.left === selLeft.left && p.right === selRight.right));
 
-            // pool'dan yeni pair ekle
+            // pool'dan boşluk varsa ekle
             while (active.length < PAGE_SIZE && pool.length > 0) {
                 active.push(pool.shift());
             }
 
+            // seçimleri sıfırla ve yeniden render et
             selLeft = selRight = null;
             render();
-        }, 180);
+        }, 150);
+
     } else {
-        // Yanlışsa turuncu
+        // Yanlışsa yazıyı turuncu yap
         lCard.style.color = "#ff7f0e";
         rCard.style.color = "#ff7f0e";
 
@@ -283,6 +287,7 @@ function check() {
         markWrong(selLeft);
 
         setTimeout(() => {
+            // yazıyı geri al
             lCard.style.color = "#c9d1d9";
             rCard.style.color = "#c9d1d9";
             selLeft = selRight = null;
@@ -290,11 +295,11 @@ function check() {
     }
 }
 
-
 fillSelectors();
 </script>
 </body>
 </html>
+
 
 
 
