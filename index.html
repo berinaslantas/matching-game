@@ -48,6 +48,7 @@ select, button {
 <select id="mainUnit"></select>
 <select id="subUnit"></select>
 <button onclick="startGame()">Başlat</button>
+<button onclick="startGeneralWrongs()">Genel Yanlışlar</button>
 
 <div class="game">
     <div class="column" id="leftCol"></div>
@@ -55,7 +56,7 @@ select, button {
 </div>
 
 <script>
-/* ===================== VERİLER (DOKUNMADIM) ===================== */
+/* ===================== VERİLER ===================== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -66,73 +67,10 @@ const units = {
             { left: "Çin Kaynakları", right: "Miğfer" },
             { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
             { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
-        ],
-        "Orta Asya Kültür Merkezleri": [
-            { left: "Anav", right: "en eski (At ilk kez)" },
-            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
-            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
-            { left: "Andronova", right: "Türk atalarının yaşadığı" },
-            { left: "Karasuk", right: "ilk demir işlendiği yer" },
-            { left: "Kelteminar", right: "yerleşik yaşam" }
-        ],
-        "Boylar": [
-            { left: "Anav", right: "en eski (At ilk kez)" },
-            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
-            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
-            { left: "Andronova", right: "Türk atalarının yaşadığı" },
-            { left: "Karasuk", right: "ilk demir işlendiği yer" },
-            { left: "Kelteminar", right: "yerleşik yaşam" }
-        ],
-        "Orta Asya Türkleri": [
-            { left: "Sakalar", right: "Bilinen ilk Türk boyu" },
-            { left: "Sakalar", right: "Alp Er Tunga" },
-            { left: "Sakalar", right: "lk Türk kadın hükümdar Tomris Hatun" },
-            { left: "Sakalar", right: "Amazon (kadın savaşçılar)" },
-            { left: "Sakalar", right: "Balbal (mezar taşı) dikme geleneği" },
-            { left: "Sakalar", right: "Atı evcilleştirmiş dünyada ilk üzengi" },
-            { left: "Sakalar", right: "Günümüzde Rusya Federasyonunda Yakut Türkleri" },
-            { left: "Sakalar", right: "Bozkırın kuyumcuları" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Kurucusu Teoman" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Başkenti Ötüken. Kutsal bölge veya Toprak Ana" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete Vatan Sevgisi(Tunguzlara toprak vermeyip) ilk Türk hükümdar" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete orduda onlu sistem" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Türk tarihinin ilk yazılı antlaşması Çinlilerle yapılan Kuzey Şansi" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada Mete Türk boylarını(26) bir bayrak altında toplayan ilk devlet" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada ilk defa siyasi birlik -Mete Han" },
-            { left: "Mukan Kağan", right: "I. Göktürklerde Türk siyasi birliği sağlayan" },
-            { left: "Kapgan Kağan", right: "II. Göktürklerde Türk siyasi birliği sağlayan" },
-            { left: "Batı Hun hükümdarı Çiçi ", right: " istiklali feda etmeyi gülünç ve utanç verici bulmuş " },
-            { left: "Batı Hun hükümdarı Balamir", right: "Kavimler göçüne önderlik etmiş" }
-        ],
-        "Avrupa Türkleri": [
-            { left: "Avrupa Hun Devleti", right: "Kurucusu Balamir -Macaristanda" },
-            { left: "Avrupa Hun Devleti en parlak dönem", right: "Attila" },
-            { left: "Avrupa Hun Devleti", right: "Avrupa'da kurulan ilk Türk devleti" },
-            { left: "Hem Orta Asya hem Avrupada Kurulanlar", right: "Büyük Hunlar ve Avarlar" },
-            { left: "Avrupa Hun Devleti", right: "Margos Barışı ve Anatolyus Ant." },
-            { left: "Avrupa Hun Devleti", right: "Galya ve İtalya seferleri (Papanın ricası)" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Papa I. Leon'un ricası" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Roma'nın Hristiyanlarca kutsal olması" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Batı Roma'nın gücünü kırdığına inanması" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Doğuda Sasani tehlikesinin bulunması" },
-            { left: "Attilla'nın ünvanları ", right: "(Etzel (Nibelungen)(Hun burgant mücadelesi)" },
-            { left: "Attilla'nın ünvanları ", right: "Cesur Kavimlerin Efendisi" },
-            { left: "Attilla'nın ünvanları ", right: "Tanrının kamçısı" },
-            { left: "Avarlar", right: "Kurucusu Bayan Han" },
-            { left: "Avarlar", right: "İstanbul'u kuşatan ilk Türk devleti (2 kere)" },
-            { left: "Avarlar", right: "Üzengi yapımını Avrupalılara öğretmiş" },
-            { left: "Avarlar", right: "Juan Juan Türkleri" },
-            { left: "Avarlar", right: "Frank saldırılarıyla yıkılmış" }
-        ]
-    },
-    "Matematik": {
-        "1. Ünite": [
-            { left: "2+2", right: "4" },
-            { left: "5*3", right: "15" }
         ]
     }
 };
-/* =============================================================== */
+/* ================================================= */
 
 const PAGE_SIZE = 5;
 let pool = [];
@@ -140,13 +78,14 @@ let active = [];
 let selLeft = null;
 let selRight = null;
 
+/* ===== SESLER ===== */
 const audio = new AudioContext();
 
 function ding() {
     const o = audio.createOscillator();
     const g = audio.createGain();
     o.frequency.value = 800;
-    g.gain.value = 0.2;
+    g.gain.value = 0.25;
     o.connect(g).connect(audio.destination);
     o.start();
     o.stop(audio.currentTime + 0.15);
@@ -156,35 +95,61 @@ function dong() {
     const o = audio.createOscillator();
     const g = audio.createGain();
     o.frequency.value = 200;
-    g.gain.value = 0.2;
+    g.gain.value = 0.25;
     o.connect(g).connect(audio.destination);
     o.start();
     o.stop(audio.currentTime + 0.3);
 }
 
-function shuffle(a) {
-    return a.sort(() => Math.random() - 0.5);
+/* ===== GENEL YANLIŞLAR ===== */
+const STORAGE_KEY = "general_wrongs_v1";
+let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+function saveWrongs() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs));
 }
+
+function markWrong(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) {
+        generalWrongs[k] = { wrong: 0, correct: 0, pair: p };
+    }
+    generalWrongs[k].wrong++;
+    saveWrongs();
+}
+
+function markCorrect(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) return;
+    generalWrongs[k].correct++;
+    if (generalWrongs[k].correct >= 2) delete generalWrongs[k];
+    saveWrongs();
+}
+
+/* ===== OYUN ===== */
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 
 function fillSelectors() {
     mainUnit.innerHTML = "";
-    Object.keys(units).forEach(k => {
-        mainUnit.innerHTML += `<option>${k}</option>`;
-    });
+    Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
     loadSub();
 }
 
 function loadSub() {
     subUnit.innerHTML = "";
-    Object.keys(units[mainUnit.value]).forEach(k => {
-        subUnit.innerHTML += `<option>${k}</option>`;
-    });
+    Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
 }
 
 mainUnit.onchange = loadSub;
 
 function startGame() {
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
+    active = pool.splice(0, PAGE_SIZE);
+    render();
+}
+
+function startGeneralWrongs() {
+    pool = shuffle(Object.values(generalWrongs).map(o => o.pair));
     active = pool.splice(0, PAGE_SIZE);
     render();
 }
@@ -213,89 +178,42 @@ function render() {
 function select(el) {
     document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
     el.classList.add("selected");
-
     if (selLeft && selRight) check();
 }
-    
-function loadNextPage() {
-    currentPagePairs = pairs.splice(0, PAGE_SIZE);
-    render();
-}
-
 
 function check() {
-    if (!selectedLeft || !selectedRight) return;
+    const l = [...leftCol.children].find(c => c.innerText === selLeft.left);
+    const r = [...rightCol.children].find(c => c.innerText === selRight.right);
 
-    const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
-    const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
-
-    // ÇOKLU DOĞRU DESTEKLİ KONTROL
-    const correct =
-        selectedLeft.left === selectedRight.left ||
-        selectedLeft.right === selectedRight.right ||
-        (Array.isArray(selectedLeft.right) &&
-         selectedLeft.right.includes(selectedRight.right));
+    const correct = selLeft.right === selRight.right;
 
     if (correct) {
-        streak++;
-        score++;
-        document.getElementById("score").innerText = "Skor: " + score;
+        l.classList.add("correct");
+        r.classList.add("correct");
+        ding();
+        markCorrect(selLeft);
 
-        // YEŞİL EFEKT + SES
-        leftCard.classList.add("correct");
-        rightCard.classList.add("correct");
-        playDing();
-
-        // ⏱️ KISA BEKLE → SADECE DOĞRU OLANI SİL
         setTimeout(() => {
-            // sadece eşleşen sol-left silinir
-            currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
-
-            // havuzdan SADECE 1 YENİ SORU EKLE
-            if (pairs.length > 0) {
-                currentPagePairs.push(pairs.shift());
-            }
-
-            selectedLeft = null;
-            selectedRight = null;
-
-            render(); // sol sabit, sağ karışık
-
-            // Ünite bittiyse
-            if (currentPagePairs.length === 0 && pairs.length === 0) {
-                if (confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) {
-                    startNextUnit();
-                }
-            }
-        }, 220);
-
+            active = active.filter(p => p !== selLeft);
+            if (pool.length) active.push(pool.shift());
+            selLeft = selRight = null;
+            render();
+        }, 180);
     } else {
-        // YANLIŞ
-        leftCard.classList.add("wrong");
-        rightCard.classList.add("wrong");
-        playDong();
+        l.classList.add("wrong");
+        r.classList.add("wrong");
+        dong();
+        markWrong(selLeft);
 
         setTimeout(() => {
-            leftCard.classList.remove("wrong");
-            rightCard.classList.remove("wrong");
-            selectedLeft = null;
-            selectedRight = null;
-        }, 400);
+            l.classList.remove("wrong");
+            r.classList.remove("wrong");
+            selLeft = selRight = null;
+        }, 300);
     }
 }
-
 
 fillSelectors();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
