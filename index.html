@@ -277,7 +277,7 @@ function check() {
 
     // Birden fazla doğru cevap varsa kontrol
     let correct = false;
-    if(Array.isArray(selectedLeft.right)){
+    if (Array.isArray(selectedLeft.right)) {
         correct = selectedLeft.right.includes(selectedRight.right);
     } else {
         correct = selectedLeft.right === selectedRight.right;
@@ -293,42 +293,43 @@ function check() {
         rightCard.classList.add("correct");
         playDing();
 
-        // Bir süre yeşil gösterip sonra sil ve yeni soruları ekle
         setTimeout(() => {
-            // Eşleşmeyi kaldır
-            currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
+            // currentPagePairs'ten kaldır
+            currentPagePairs = currentPagePairs.filter(p => p.left !== selectedLeft.left || p.right !== selectedLeft.right);
+
+            // pairs havuzundan da kaldır (aynı left+right ile)
+            pairs = pairs.filter(p => p.left !== selectedLeft.left || p.right !== selectedLeft.right);
 
             // Eksik sayıyı tamamla
             const needed = PAGE_SIZE - currentPagePairs.length;
-            if(needed > 0 && pairs.length > 0){
-                const newPairs = shuffle([...pairs]).slice(0, needed);
+            if (needed > 0 && pairs.length > 0) {
+                const newPairs = shuffle(pairs).slice(0, needed);
                 currentPagePairs = currentPagePairs.concat(newPairs);
-                // Havuzdan çıkart
-                newPairs.forEach(np => pairs = pairs.filter(p => p !== np));
+                // Havuzdan kaldır
+                newPairs.forEach(np => {
+                    pairs = pairs.filter(p => p.left !== np.left || p.right !== np.right);
+                });
             }
 
             render();
 
             // Ünite bittiğinde
-            if(currentPagePairs.length === 0 && pairs.length === 0){
-                if(confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
+            if (currentPagePairs.length === 0 && pairs.length === 0) {
+                if (confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
             }
+
         }, 500);
 
         selectedLeft = selectedRight = null;
-
     } else {
-        // Yanlış seçilmiş
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
         playDong();
-        // Yanlışlar silinmeden tekrar seçilebilir
         setTimeout(() => resetCards(), 500);
 
         selectedLeft = selectedRight = null;
     }
 }
-
 
 /* ===== SAYFA YÖNETİMİ ===== */
 function loadNextPage() {
@@ -375,6 +376,7 @@ loadProgress();
 </script>
 </body>
 </html>
+
 
 
 
