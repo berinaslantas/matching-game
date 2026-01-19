@@ -76,9 +76,8 @@ let pool = [], active = [], selLeft = null, selRight = null, streak = 0;
 const audioCtx = new AudioContext();
 
 function playDing() {
-    streak = Math.max(1, streak);
-    let freq = 700 * (1 + streak*0.2);
-    if (freq > 2000) freq = 2000;
+    let freq = 700 + streak*20;
+    if (freq>2000) freq = 2000;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
@@ -91,15 +90,15 @@ function playDing() {
 
 function playDong() {
     const freqs = [200, 150, 100];
-    freqs.forEach(f => {
+    freqs.forEach(f=>{
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        osc.type = "sine";
+        osc.type="sine";
         osc.frequency.setValueAtTime(f, audioCtx.currentTime);
         osc.connect(gain).connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
+        osc.stop(audioCtx.currentTime + 0.3);
     });
 }
 
@@ -133,7 +132,7 @@ function render(){
         const d=document.createElement("div");
         d.className="card";
         d.dataset.rights = JSON.stringify(p.right);
-        d.innerText = Array.isArray(p.right)?p.right[0]:p.right;
+        d.innerText = p.right[0];
         d.onclick = ()=>{selRight=p; select(d);};
         rightCol.appendChild(d);
     });
@@ -153,9 +152,9 @@ function check(){
         streak++;
         playDing();
         l.classList.add("correct"); r.classList.add("correct");
+        // tüm doğru eşleşmeleri yeşil yap
         rights.forEach(val=>{
-            const rc = [...rightCol.children].filter(c=>c.innerText===val);
-            rc.forEach(c=>c.classList.add("correct"));
+            [...rightCol.children].filter(c=>c.innerText===val).forEach(c=>c.classList.add("correct"));
         });
         markCorrect(selLeft);
         setTimeout(()=>{
