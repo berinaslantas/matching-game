@@ -87,7 +87,7 @@ function playCorrect() {
     const gain = audioCtx.createGain();
     osc.type = "triangle";
     // Streak’e bağlı olarak frekansı artır
-    let freq = 800 + streak*50;
+    let freq = 800 * (1 + streak*0.2);
     if (freq > 2000) freq = 2000; // maksimum sınır
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
     gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
@@ -220,3 +220,4 @@ fillSelectors();
 </script>
 </body>
 </html>
+
