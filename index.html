@@ -275,9 +275,9 @@ function check() {
     const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
     const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
 
-    // Birden fazla doğru cevap varsa kontrol
+    // Doğru kontrol (birden fazla doğru olasılığı da destekleyecek şekilde)
     let correct = false;
-    if(Array.isArray(selectedLeft.right)){
+    if(Array.isArray(selectedLeft.right)) {
         correct = selectedLeft.right.includes(selectedRight.right);
     } else {
         correct = selectedLeft.right === selectedRight.right;
@@ -288,16 +288,25 @@ function check() {
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
 
+        // Doğru efekt
         leftCard.classList.add("correct");
         rightCard.classList.add("correct");
         playDing();
 
-        // 0.5 saniye yeşil yanıp ses efekti göster, sonra sil
+        // Bir süre yeşil gösterip sonra sil
         setTimeout(() => {
+            // Ekrandan kaldır
             currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
+            render();
 
-            // Her zaman 5 eşleşme olacak şekilde ekle
-            loadNextPage();
+            // Yeni sorular ekle
+            if(currentPagePairs.length < PAGE_SIZE && pairs.length > 0){
+                const newPairs = shuffle([...pairs]).slice(0, PAGE_SIZE - currentPagePairs.length);
+                currentPagePairs = currentPagePairs.concat(newPairs);
+                // Kaldırdığımız soruları pairs havuzundan da çıkart
+                newPairs.forEach(np => pairs = pairs.filter(p => p !== np));
+                render();
+            }
 
             // Ünite bittiğinde
             if(currentPagePairs.length === 0 && pairs.length === 0){
@@ -309,14 +318,16 @@ function check() {
         selectedLeft = selectedRight = null;
 
     } else {
+        // Yanlış seçilmiş
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
         playDong();
+        // Yanlışlar silinmeden tekrar seçilebilir
         setTimeout(() => resetCards(), 500);
+
         selectedLeft = selectedRight = null;
     }
 }
-
 
 /* ===== SAYFA YÖNETİMİ ===== */
 function loadNextPage() {
@@ -363,4 +374,5 @@ loadProgress();
 </script>
 </body>
 </html>
+
 
