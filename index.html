@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eşleştirme Oyunu</title>
+
 <style>
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -36,8 +37,8 @@ select, button {
     transition: 0.15s;
 }
 .card.selected { border-color: #58a6ff; }
-.card.correct { color: #238636; border-color: #238636; }
-.card.wrong { color: #b45309; border-color: #b45309; }
+.card.correct { background:#2ea043; border-color:#2ea043; color:#2ea043; }
+.card.wrong { background:#663300; border-color:#ff7f0e; color:#ff7f0e; }
 </style>
 </head>
 <body>
@@ -55,123 +56,163 @@ select, button {
 </div>
 
 <script>
-/* ===================== VERİLER ===================== */
+/* ===== VERİLER ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
-            { left: "Wambery", right: ["Türemek"] },
-            { left: "Doerfer", right: ["Devlete bağlı halk"] },
-            { left: "Kaşgarlı Mahmut", right: ["Olgunluk Çağı"] },
-            { left: "İran Kaynakları", right: ["Güzel İnsan"] },
-            { left: "Çin Kaynakları", right: ["Miğfer"] },
-            { left: "Ziya Gökalp", right: ["Kanun ve nizam sahibi"] },
-            { left: "Diğer", right: ["Güçlü", "kuvvetli", "terk edilmiş"] }
+            { left: "Wambery", right: "Türemek" },
+            { left: "Doerfer", right: "Devlete bağlı halk" },
+            { left: "Kaşgarlı Mahmut", right: "Olgunluk Çağı" },
+            { left: "İran Kaynakları", right: "Güzel İnsan" },
+            { left: "Çin Kaynakları", right: "Miğfer" },
+            { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
+            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
         ]
     }
 };
+
 const PAGE_SIZE = 5;
-let pool = [], active = [], selLeft = null, selRight = null, streak = 0;
+let pool = [];
+let active = [];
+let selLeft = null;
+let selRight = null;
+let streak = 0;
 
 /* ===== SESLER ===== */
-const audioCtx = new AudioContext();
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-function playDing() {
-    streak = Math.max(1, streak); 
-    let freq = 700 * (1 + streak*0.2);
-    if (freq > 2000) freq = 2000;
+function playCorrect() {
+    streak++;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
     osc.type = "triangle";
+    // Streak’e bağlı olarak frekansı artır
+    let freq = 800 * (1 + streak*0.2);
+    if (freq > 2000) freq = 2000; // maksimum sınır
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
     osc.connect(gain).connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.25);
+    osc.stop(audioCtx.currentTime + 0.4);
 }
 
-function playDong() {
-    const freqs = [200, 150, 100];
-    freqs.forEach(f => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
-    });
+function playWrong() {
+    streak = 0; // yanlış streaki sıfırlar
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(180, audioCtx.currentTime); // bas dongumsu
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
 }
 
 /* ===== GENEL YANLIŞLAR ===== */
-const STORAGE_KEY = "general_wrongs_v2";
+const STORAGE_KEY = "general_wrongs_v3";
 let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-function saveWrongs(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
-function markWrong(p){ const k=p.left+"||"+p.right; if(!generalWrongs[k]) generalWrongs[k]={pair:p,wrong:0,correct:0}; generalWrongs[k].wrong++; saveWrongs(); }
-function markCorrect(p){ const k=p.left+"||"+p.right; if(!generalWrongs[k]) return; generalWrongs[k].correct++; if(generalWrongs[k].correct>=2) delete generalWrongs[k]; saveWrongs(); }
+function saveWrongs() { localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
+function markWrong(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) generalWrongs[k] = { wrong: 0, correct: 0, pair: p };
+    generalWrongs[k].wrong++;
+    saveWrongs();
+}
+function markCorrect(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) return;
+    generalWrongs[k].correct++;
+    if (generalWrongs[k].correct >= 2) delete generalWrongs[k];
+    saveWrongs();
+}
 
 /* ===== OYUN ===== */
-function shuffle(a){return a.sort(()=>Math.random()-0.5);}
-function fillSelectors(){
-    mainUnit.innerHTML=""; Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`); loadSub();
-}
-function loadSub(){
-    subUnit.innerHTML=""; Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
-}
-mainUnit.onchange=loadSub;
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 
-function startGame(){ pool=shuffle([...units[mainUnit.value][subUnit.value]]); active=pool.splice(0,PAGE_SIZE); streak=0; render(); }
-function startGeneralWrongs(){ pool=shuffle(Object.values(generalWrongs).map(o=>o.pair)); active=pool.splice(0,PAGE_SIZE); streak=0; render(); }
+function fillSelectors() {
+    mainUnit.innerHTML = "";
+    Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
+    loadSub();
+}
 
-function render(){
-    leftCol.innerHTML=""; rightCol.innerHTML="";
-    active.forEach(p=>{
-        const d=document.createElement("div");
-        d.className="card"; d.innerText=p.left; d.onclick=()=>{selLeft=p; select(d);}; leftCol.appendChild(d);
+function loadSub() {
+    subUnit.innerHTML = "";
+    Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
+}
+
+mainUnit.onchange = loadSub;
+
+function startGame() {
+    streak = 0;
+    pool = shuffle([...units[mainUnit.value][subUnit.value]]);
+    active = pool.splice(0, PAGE_SIZE);
+    render();
+}
+
+function startGeneralWrongs() {
+    streak = 0;
+    pool = shuffle(Object.values(generalWrongs).map(o => o.pair));
+    active = pool.splice(0, PAGE_SIZE);
+    render();
+}
+
+function render() {
+    leftCol.innerHTML = "";
+    rightCol.innerHTML = "";
+
+    active.forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.left;
+        d.onclick = () => { selLeft = p; select(d); };
+        leftCol.appendChild(d);
     });
-    shuffle([...active]).forEach(p=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.dataset.rights = JSON.stringify(p.right);
-        d.innerText = Array.isArray(p.right)?p.right[0]:p.right;
-        d.onclick = ()=>{selRight=p; select(d);};
+
+    shuffle([...active]).forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.right;
+        d.onclick = () => { selRight = p; select(d); };
         rightCol.appendChild(d);
     });
 }
 
-function select(el){
-    document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
+function select(el) {
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
     el.classList.add("selected");
-    if(selLeft && selRight) check();
+    if (selLeft && selRight) check();
 }
 
-function check(){
-    const l = [...leftCol.children].find(c=>c.innerText===selLeft.left);
-    const r = [...rightCol.children].find(c=>c.innerText===selRight.right);
-    const rights = Array.isArray(selLeft.right)?selLeft.right:[selLeft.right];
-    if(rights.includes(selRight.right)){
-        streak++;
-        playDing();
-        l.classList.add("correct"); r.classList.add("correct");
-        rights.forEach(val=>{
-            const rc = [...rightCol.children].find(c=>c.innerText===val);
-            if(rc) rc.classList.add("correct");
-        });
+function check() {
+    const l = [...leftCol.children].find(c => c.innerText === selLeft.left);
+    const r = [...rightCol.children].find(c => c.innerText === selRight.right);
+    const correct = selLeft.right === selRight.right;
+
+    if (correct) {
+        l.classList.add("correct");
+        r.classList.add("correct");
+        playCorrect();
         markCorrect(selLeft);
-        setTimeout(()=>{
-            active = active.filter(p=>p!==selLeft);
-            if(pool.length) active.push(pool.shift());
-            selLeft=selRight=null;
+
+        setTimeout(() => {
+            active = active.filter(p => p !== selLeft);
+            if (pool.length) active.push(pool.shift());
+            selLeft = selRight = null;
             render();
-        },180);
-    }else{
-        streak=0;
-        l.classList.add("wrong"); r.classList.add("wrong");
-        playDong(); markWrong(selLeft);
-        setTimeout(()=>{
-            l.classList.remove("wrong"); r.classList.remove("wrong");
-            selLeft=selRight=null;
-        },300);
+        }, 180);
+    } else {
+        l.classList.add("wrong");
+        r.classList.add("wrong");
+        playWrong();
+        markWrong(selLeft);
+
+        setTimeout(() => {
+            l.classList.remove("wrong");
+            r.classList.remove("wrong");
+            selLeft = selRight = null;
+        }, 300);
     }
 }
 
