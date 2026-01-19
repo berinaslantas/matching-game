@@ -272,33 +272,46 @@ function selectRight(el, p) {
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
+    // Seçilen kartların DOM elementleri
     const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
     const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
 
-    let correct = false;
-    if(Array.isArray(selectedLeft.right)) {
-        correct = selectedLeft.right.includes(selectedRight.right);
-    } else {
-        correct = selectedLeft.right === selectedRight.right;
-    }
+    // Aynı sol veya sağ değeri olan eşleşmeleri kontrol et
+    let correctPairs = currentPagePairs.filter(p => 
+        (p.left === selectedLeft.left && p.right === selectedRight.right) || 
+        (p.left === selectedLeft.left && Array.isArray(p.right) ? p.right.includes(selectedRight.right) : p.right === selectedRight.right) ||
+        (Array.isArray(selectedLeft.right) ? selectedLeft.right.includes(p.right) : selectedLeft.right === p.right) 
+    );
 
-    if (correct) {
+    if (correctPairs.length > 0) {
         streak++;
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
 
+        // Doğru efekt
         leftCard.classList.add("correct");
         rightCard.classList.add("correct");
         playDing();
 
-        // Her eşleşme için ayrı ayrı kaldırma
         setTimeout(() => {
-            // Sadece doğru eşleşmeyi ekrandan çıkar
-            currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
+            // Doğru eşleşmeleri ekrandan kaldır
+            correctPairs.forEach(p => {
+                currentPagePairs = currentPagePairs.filter(cp => cp !== p);
+                // Havuzdan da çıkar
+                pairs = pairs.filter(pool => pool !== p);
+            });
+
+            // Yeni sorular ekle, sayfa hep 5 eşleşmede kalsın
+            while(currentPagePairs.length < PAGE_SIZE && pairs.length > 0){
+                const np = shuffle([...pairs])[0];
+                currentPagePairs.push(np);
+                pairs = pairs.filter(p => p !== np);
+            }
+
             render();
 
-            // Eğer sayfadaki tüm eşleşmeler doğru yapılmışsa ünite sonu kontrolü
-            if(currentPagePairs.length === 0){
+            // Ünite bitiş kontrolü
+            if(currentPagePairs.length === 0 && pairs.length === 0){
                 if(confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
             }
 
@@ -307,6 +320,7 @@ function check() {
         selectedLeft = selectedRight = null;
 
     } else {
+        // Yanlış
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
         playDong();
@@ -315,9 +329,11 @@ function check() {
     }
 }
 
-// Artık loadNextPage sadece ilk sayfa için çalışacak
+// İlk sayfa yüklemesi
 function loadNextPage() {
     currentPagePairs = shuffle([...pairs]).slice(0, PAGE_SIZE);
+    // Havuzdan çıkar
+    currentPagePairs.forEach(p => pairs = pairs.filter(pool => pool !== p));
     render();
 }
 
@@ -351,6 +367,7 @@ loadProgress();
 </script>
 </body>
 </html>
+
 
 
 
