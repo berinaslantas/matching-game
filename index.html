@@ -275,7 +275,7 @@ function check() {
     const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
     const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
 
-    // Birden fazla doğru cevap varsa kontrol
+    // Doğru kontrol (birden fazla doğru olasılığı)
     let correct = false;
     if (Array.isArray(selectedLeft.right)) {
         correct = selectedLeft.right.includes(selectedRight.right);
@@ -293,11 +293,10 @@ function check() {
         rightCard.classList.add("correct");
         playDing();
 
+        // Yeşil rengi biraz göster
         setTimeout(() => {
-            // currentPagePairs'ten kaldır
+            // currentPagePairs ve pairs havuzundan kaldır
             currentPagePairs = currentPagePairs.filter(p => p.left !== selectedLeft.left || p.right !== selectedLeft.right);
-
-            // pairs havuzundan da kaldır (aynı left+right ile)
             pairs = pairs.filter(p => p.left !== selectedLeft.left || p.right !== selectedLeft.right);
 
             // Eksik sayıyı tamamla
@@ -305,12 +304,12 @@ function check() {
             if (needed > 0 && pairs.length > 0) {
                 const newPairs = shuffle(pairs).slice(0, needed);
                 currentPagePairs = currentPagePairs.concat(newPairs);
-                // Havuzdan kaldır
                 newPairs.forEach(np => {
                     pairs = pairs.filter(p => p.left !== np.left || p.right !== np.right);
                 });
             }
 
+            // Render yeni durum
             render();
 
             // Ünite bittiğinde
@@ -318,10 +317,11 @@ function check() {
                 if (confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
             }
 
-        }, 500);
+        }, 500); // 500ms bekle, yeşil efekt görünür
 
         selectedLeft = selectedRight = null;
     } else {
+        // Yanlış seçilmiş
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
         playDong();
@@ -376,6 +376,7 @@ loadProgress();
 </script>
 </body>
 </html>
+
 
 
 
