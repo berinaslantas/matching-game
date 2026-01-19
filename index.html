@@ -38,49 +38,17 @@ select, button { margin:8px; padding:6px 12px; font-size:16px; border-radius:6px
 <div id="score">Skor: 0</div>
 
 <script>
-/* ===== GLOBAL ===== */
-let streak = 0;
-let score = 0;
-let selectedLeft = null;
-let selectedRight = null;
-let pairs = [];
-const STORAGE_KEY = "matching_game_progress_v1";
-const generalWrongs = new Map();
-const statsIndex = {};
-const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+let streak=0, score=0, selectedLeft=null, selectedRight=null, pairs=[];
+const STORAGE_KEY="matching_game_progress_v1";
+const generalWrongs=new Map();
+const statsIndex={};
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 
-/* ===== SES ===== */
-function playDing() {
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime+0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.35);
-    gain.connect(audioCtx.destination);
-    const osc = audioCtx.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(700+streak*20, audioCtx.currentTime);
-    osc.connect(gain);
-    osc.start();
-    osc.stop(audioCtx.currentTime+0.35);
-}
-function playDong() {
-    const freqs=[440,220,110];
-    const gain=audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001,audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.15,audioCtx.currentTime+0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.6);
-    gain.connect(audioCtx.destination);
-    freqs.forEach(f=>{
-        const osc=audioCtx.createOscillator();
-        osc.type="sine";
-        osc.frequency.setValueAtTime(f,audioCtx.currentTime);
-        osc.connect(gain);
-        osc.start();
-        osc.stop(audioCtx.currentTime+0.6);
-    });
-}
+/* SES */
+function playDing(){const gain=audioCtx.createGain();gain.gain.setValueAtTime(0.0001,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(0.3,audioCtx.currentTime+0.01);gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.35);gain.connect(audioCtx.destination);const osc=audioCtx.createOscillator();osc.type="triangle";osc.frequency.setValueAtTime(700+streak*20,audioCtx.currentTime);osc.connect(gain);osc.start();osc.stop(audioCtx.currentTime+0.35);}
+function playDong(){const freqs=[440,220,110];const gain=audioCtx.createGain();gain.gain.setValueAtTime(0.0001,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(0.15,audioCtx.currentTime+0.01);gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.6);gain.connect(audioCtx.destination);freqs.forEach(f=>{const osc=audioCtx.createOscillator();osc.type="sine";osc.frequency.setValueAtTime(f,audioCtx.currentTime);osc.connect(gain);osc.start();osc.stop(audioCtx.currentTime+0.6);});}
 
-/* ===== VERİ ===== */
+/* VERİ */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -187,121 +155,51 @@ const units = {
 };
 
 
-/* ===== INDEX ===== */
-function buildIndex(){
-Object.values(units).forEach(u=>Object.values(u).forEach(list=>list.forEach(q=>{
-const k=q.left+"||"+q.right;
-if(!statsIndex[k]) statsIndex[k]={wrongCount:0,correctInWrongs:0};
-})));
-}
+/* INDEX */
+function buildIndex(){Object.values(units).forEach(u=>Object.values(u).forEach(list=>list.forEach(q=>{const k=q.left+"||"+q.right;if(!statsIndex[k]) statsIndex[k]={wrongCount:0,correctInWrongs:0};})));}
 
-/* ===== STORAGE ===== */
-function saveProgress(){
-localStorage.setItem(STORAGE_KEY,JSON.stringify({statsIndex,generalWrongs:[...generalWrongs.keys()]}));
-}
-function loadProgress(){
-const raw=localStorage.getItem(STORAGE_KEY);
-if(!raw)return;
-const data=JSON.parse(raw);
-Object.assign(statsIndex,data.statsIndex||{});
-(data.generalWrongs||[]).forEach(k=>generalWrongs.set(k,true));
-}
+/* STORAGE */
+function saveProgress(){localStorage.setItem(STORAGE_KEY,JSON.stringify({statsIndex,generalWrongs:[...generalWrongs.keys()]}));}
+function loadProgress(){const raw=localStorage.getItem(STORAGE_KEY);if(!raw) return; const data=JSON.parse(raw); Object.assign(statsIndex,data.statsIndex||{}); (data.generalWrongs||[]).forEach(k=>generalWrongs.set(k,true));}
 
-/* ===== OYUN ===== */
+/* OYUN */
 function shuffle(a){return a.sort(()=>Math.random()-0.5);}
-function resetCards(){
-document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected","wrong"));
-}
+function resetCards(){document.querySelectorAll(".card").forEach(c=>c.classList.remove("wrong"));}
 function render(){
-document.getElementById("left").innerHTML="";
-document.getElementById("right").innerHTML="";
-shuffle([...pairs]).forEach(p=>{
-const d=document.createElement("div");
-d.className="card";
-d.innerText=p.left;
-d.onclick=()=>selectLeft(d,p);
-document.getElementById("left").appendChild(d);
-});
-shuffle([...pairs]).forEach(p=>{
-const d=document.createElement("div");
-d.className="card";
-d.innerText=p.right;
-d.onclick=()=>selectRight(d,p);
-document.getElementById("right").appendChild(d);
-});
+const leftCol=document.getElementById("left"), rightCol=document.getElementById("right");
+leftCol.innerHTML=""; rightCol.innerHTML="";
+shuffle([...pairs]).forEach(p=>{const d=document.createElement("div");d.className="card";d.innerText=p.left; d.onclick=()=>selectLeft(d,p); leftCol.appendChild(d);});
+shuffle([...pairs]).forEach(p=>{const d=document.createElement("div");d.className="card";d.innerText=p.right; d.onclick=()=>selectRight(d,p); rightCol.appendChild(d);});
 }
-function selectLeft(el,p){
-resetCards();
-el.classList.add("selected");
-selectedLeft=p;
-check();
-}
-function selectRight(el,p){
-resetCards();
-el.classList.add("selected");
-selectedRight=p;
-check();
-}
-function check(){
-if(!selectedLeft||!selectedRight)return;
+function selectLeft(el,p){el.classList.add("selected"); selectedLeft=p; check();}
+function selectRight(el,p){el.classList.add("selected"); selectedRight=p; check();}
+function check(){if(!selectedLeft||!selectedRight)return;
 const leftCard=[...document.getElementById("left").children].find(c=>c.innerText===selectedLeft.left);
 const rightCard=[...document.getElementById("right").children].find(c=>c.innerText===selectedRight.right);
-const key=selectedLeft.left+"||"+selectedLeft.right;
-const stat=statsIndex[key];
-if(selectedLeft.right===selectedRight.right){
-streak++; score++; document.getElementById("score").innerText="Skor: "+score;
-leftCard.classList.add("correct"); rightCard.classList.add("correct");
-if(generalWrongs.has(key)){
-stat.correctInWrongs++;
-if(stat.correctInWrongs>=2){ generalWrongs.delete(key); stat.correctInWrongs=0; stat.wrongCount=0; }
-}
-pairs=pairs.filter(p=>p!==selectedLeft);
-setTimeout(render,180);
-}else{
-playDong();
-leftCard.classList.add("wrong"); rightCard.classList.add("wrong");
-stat.wrongCount++;
-if(stat.wrongCount>=3) generalWrongs.set(key,true);
-}
-saveProgress();
-selectedLeft=selectedRight=null;
-}
+const key=selectedLeft.left+"||"+selectedLeft.right; const stat=statsIndex[key];
+if(selectedLeft.right===selectedRight.right){streak++; score++; document.getElementById("score").innerText="Skor: "+score; leftCard.classList.add("correct"); rightCard.classList.add("correct");
+if(generalWrongs.has(key)){ stat.correctInWrongs++; if(stat.correctInWrongs>=2){ generalWrongs.delete(key); stat.correctInWrongs=0; stat.wrongCount=0; } }
+pairs=pairs.filter(p=>p!==selectedLeft); setTimeout(render,180);} 
+else{playDong(); leftCard.classList.add("wrong"); rightCard.classList.add("wrong"); stat.wrongCount++; if(stat.wrongCount>=3) generalWrongs.set(key,true);}
+saveProgress(); selectedLeft=selectedRight=null;}
 
-/* ===== ÜNİTE ===== */
+/* ÜNİTE */
 const mainUnitSelect=document.getElementById("mainUnitSelect");
 const subUnitSelect=document.getElementById("subUnitSelect");
 const startBtn=document.getElementById("startBtn");
 const wrongsBtn=document.getElementById("wrongsBtn");
 
-function updateSubUnits(){
-subUnitSelect.innerHTML="";
-Object.keys(units[mainUnitSelect.value]).forEach(s=>{
-const o=document.createElement("option");
-o.value=s; o.textContent=s;
-subUnitSelect.appendChild(o);
-});
-}
+function updateSubUnits(){subUnitSelect.innerHTML=""; Object.keys(units[mainUnitSelect.value]).forEach(s=>{const o=document.createElement("option"); o.value=s; o.textContent=s; subUnitSelect.appendChild(o);});}
 mainUnitSelect.onchange=updateSubUnits;
 updateSubUnits();
 
-startBtn.onclick=()=>{
-const m=mainUnitSelect.value;
-const s=subUnitSelect.value;
-pairs=units[m][s].map(q=>q);
-score=0;
-document.getElementById("score").innerText="Skor: 0";
-render();
-};
+startBtn.onclick=()=>{const m=mainUnitSelect.value; const s=subUnitSelect.value; pairs=units[m][s].map(q=>q); score=0; document.getElementById("score").innerText="Skor: 0"; render();};
 
+/* GENEL YANLIŞLAR */
 wrongsBtn.onclick=()=>{
-// Genel yanlışları aç
 if(generalWrongs.size===0){ alert("Genel yanlış yok."); return; }
-pairs=[];
-generalWrongs.forEach((v,k)=>{
-const [l,r]=k.split("||");
-pairs.push({left:l,right:r});
-});
-render();
+pairs=[]; generalWrongs.forEach((v,k)=>{const [l,r]=k.split("||"); pairs.push({left:l,right:r});});
+score=0; document.getElementById("score").innerText="Skor: 0"; render();
 };
 
 buildIndex();
