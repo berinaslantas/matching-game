@@ -250,14 +250,17 @@ function select(el) {
 
 function check() {
     // DOM kartları
-    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left);
-    const rCard = [...rightCol.children].find(c => c.innerText === selRight.right);
+    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left && c.style.color !== "#2ea043");
+    const rCard = [...rightCol.children].find(c => c.innerText === selRight.right && c.style.color !== "#2ea043");
 
-    // doğru kontrolü: sol ve sağ pair tam eşleşmeli
-    const correct = selLeft.right === selRight.right;
+    // sağdaki doğru cevaplar listesi
+    const correctRights = active.filter(p => p.left === selLeft.left).map(p => p.right);
+
+    // doğru mu kontrol et
+    const correct = correctRights.includes(selRight.right);
 
     if (correct) {
-        // Sadece yazı rengini değiştir
+        // sadece yazı rengini değiştir
         lCard.style.color = "#2ea043";
         rCard.style.color = "#2ea043";
 
@@ -265,21 +268,20 @@ function check() {
         markCorrect(selLeft);
 
         setTimeout(() => {
-            // sadece seçilen pair'i sil, diğer doğru cevaplar kalır
-            active = active.filter(p => !(p.left === selLeft.left && p.right === selRight.right));
+            // sadece seçilen pair'i sil, aynı soldaki diğer doğru cevaplar kalır
+            const idx = active.findIndex(p => p.left === selLeft.left && p.right === selRight.right);
+            if (idx !== -1) active.splice(idx, 1);
 
-            // pool'dan boşluk varsa ekle
+            // pool'dan PAGE_SIZE kadar ekle
             while (active.length < PAGE_SIZE && pool.length > 0) {
                 active.push(pool.shift());
             }
 
-            // seçimleri sıfırla ve yeniden render et
             selLeft = selRight = null;
             render();
         }, 150);
 
     } else {
-        // Yanlışsa yazıyı turuncu yap
         lCard.style.color = "#ff7f0e";
         rCard.style.color = "#ff7f0e";
 
@@ -287,7 +289,6 @@ function check() {
         markWrong(selLeft);
 
         setTimeout(() => {
-            // yazıyı geri al
             lCard.style.color = "#c9d1d9";
             rCard.style.color = "#c9d1d9";
             selLeft = selRight = null;
@@ -299,6 +300,7 @@ fillSelectors();
 </script>
 </body>
 </html>
+
 
 
 
