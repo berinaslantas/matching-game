@@ -275,9 +275,9 @@ function check() {
     const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
     const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
 
-    // Doğru kontrol (birden fazla doğru olasılığı da destekleyecek şekilde)
+    // Birden fazla doğru cevap varsa kontrol
     let correct = false;
-    if(Array.isArray(selectedLeft.right)) {
+    if(Array.isArray(selectedLeft.right)){
         correct = selectedLeft.right.includes(selectedRight.right);
     } else {
         correct = selectedLeft.right === selectedRight.right;
@@ -288,25 +288,16 @@ function check() {
         score++;
         document.getElementById("score").innerText = "Skor: " + score;
 
-        // Doğru efekt
         leftCard.classList.add("correct");
         rightCard.classList.add("correct");
         playDing();
 
-        // Bir süre yeşil gösterip sonra sil
+        // 0.5 saniye yeşil yanıp ses efekti göster, sonra sil
         setTimeout(() => {
-            // Ekrandan kaldır
             currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
-            render();
 
-            // Yeni sorular ekle
-            if(currentPagePairs.length < PAGE_SIZE && pairs.length > 0){
-                const newPairs = shuffle([...pairs]).slice(0, PAGE_SIZE - currentPagePairs.length);
-                currentPagePairs = currentPagePairs.concat(newPairs);
-                // Kaldırdığımız soruları pairs havuzundan da çıkart
-                newPairs.forEach(np => pairs = pairs.filter(p => p !== np));
-                render();
-            }
+            // Her zaman 5 eşleşme olacak şekilde ekle
+            loadNextPage();
 
             // Ünite bittiğinde
             if(currentPagePairs.length === 0 && pairs.length === 0){
@@ -318,13 +309,10 @@ function check() {
         selectedLeft = selectedRight = null;
 
     } else {
-        // Yanlış seçilmiş
         leftCard.classList.add("wrong");
         rightCard.classList.add("wrong");
         playDong();
-        // Yanlışlar silinmeden tekrar seçilebilir
         setTimeout(() => resetCards(), 500);
-
         selectedLeft = selectedRight = null;
     }
 }
@@ -332,16 +320,17 @@ function check() {
 
 /* ===== SAYFA YÖNETİMİ ===== */
 function loadNextPage() {
-    currentPagePairs = shuffle([...pairs]).slice(0,PAGE_SIZE);
+    // Ekranda 5 eşleşme olacak şekilde seç
+    const needed = PAGE_SIZE - currentPagePairs.length;
+    if(needed > 0 && pairs.length > 0){
+        const newPairs = shuffle([...pairs]).slice(0, needed);
+        currentPagePairs = currentPagePairs.concat(newPairs);
+        // eklenenleri havuzdan çıkar
+        newPairs.forEach(np => {
+            pairs = pairs.filter(p => p !== np);
+        });
+    }
     render();
-}
-
-function startNextUnit() {
-    let nextIndex = Object.keys(units).indexOf(mainUnitSelect.value) + 1;
-    if(nextIndex >= Object.keys(units).length) nextIndex = 0;
-    mainUnitSelect.selectedIndex = nextIndex;
-    updateSubUnits();
-    startBtn.click();
 }
 
 /* ===== ÜNİTE ===== */
@@ -374,3 +363,4 @@ loadProgress();
 </script>
 </body>
 </html>
+
