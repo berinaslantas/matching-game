@@ -272,7 +272,7 @@ function selectRight(el, p) {
 function check() {
     if (!selectedLeft || !selectedRight) return;
 
-    // Doğru eşleşmeler (sol veya sağ aynı olanlar dahil)
+    // Doğru eşleşmeleri bul (sol veya sağ taraf aynı olanlar dahil)
     let correctPairs = currentPagePairs.filter(p => 
         p.left === selectedLeft.left && 
         (Array.isArray(p.right) ? p.right.includes(selectedRight.right) : p.right === selectedRight.right)
@@ -296,14 +296,14 @@ function check() {
             pairs = pairs.filter(pool => pool !== p);
         });
 
-        // Yeni eşleşmeleri sayfa 5 dolana kadar ekle
+        // Sağ blok için yeni kartlar ekle ve karıştır
         while(currentPagePairs.length < PAGE_SIZE && pairs.length > 0){
             const npIndex = Math.floor(Math.random() * pairs.length);
             const np = pairs.splice(npIndex, 1)[0]; // havuzdan çıkar
             currentPagePairs.push(np);
         }
 
-        render(); // hemen render et
+        render(); // render sırasında sol blok sabit, sağ blok karışacak
 
         // Ünite bitiş kontrolü
         if(currentPagePairs.length === 0 && pairs.length === 0){
@@ -325,15 +325,13 @@ function check() {
     }
 }
 
-// Render fonksiyonu: sol ve sağ kolonları karıştır
+// Render: sol blok sabit, sağ blok karışık
 function render() {
     left.innerHTML = "";
     right.innerHTML = "";
 
-    const leftShuffled = shuffle([...currentPagePairs]);
-    const rightShuffled = shuffle([...currentPagePairs]);
-
-    leftShuffled.forEach(p => {
+    // Sol blok sabit (sadece mevcut currentPagePairs)
+    currentPagePairs.forEach(p => {
         const d = document.createElement("div");
         d.className = "card";
         d.innerText = p.left;
@@ -341,6 +339,8 @@ function render() {
         left.appendChild(d);
     });
 
+    // Sağ blok karışık
+    const rightShuffled = shuffle([...currentPagePairs]);
     rightShuffled.forEach(p => {
         const d = document.createElement("div");
         d.className = "card";
@@ -350,16 +350,6 @@ function render() {
     });
 }
 
-// İlk sayfa yüklemesi
-function loadNextPage() {
-    currentPagePairs = [];
-    while(currentPagePairs.length < PAGE_SIZE && pairs.length > 0){
-        const npIndex = Math.floor(Math.random() * pairs.length);
-        const np = pairs.splice(npIndex, 1)[0]; // havuzdan çıkar
-        currentPagePairs.push(np);
-    }
-    render();
-}
 
 /* ===== ÜNİTE ===== */
 function updateSubUnits() {
@@ -391,6 +381,7 @@ loadProgress();
 </script>
 </body>
 </html>
+
 
 
 
