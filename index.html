@@ -2,38 +2,123 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Eşleştirme Oyunu</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <style>
-body { font-family: sans-serif; background:#0d1117; color:#c9d1d9; text-align:center; padding:20px; }
-h1{margin-bottom:12px;}
-select,button{margin:8px;padding:6px 12px;font-size:16px;border-radius:6px;border:1px solid #30363d;background:#161b22;color:#c9d1d9;}
-.game{display:flex;justify-content:space-between;gap:12px;margin-top:12px;}
-.column{width:48%;}
-.card{background:#161b22;padding:15px;margin:8px 0;border-radius:12px;border:1px solid #30363d;font-size:18px;cursor:pointer;transition:all 0.15s ease;}
-.card.selected{border-color:#58a6ff;}
-.card.correct{color:#238636;border-color:#238636;}
-.card.wrong{color:#b45309;border-color:#b45309;}
-#score{margin-top:16px;font-size:20px;}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+h1 { margin-bottom: 12px; }
+select, button {
+    margin: 8px;
+    padding: 6px 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    background: #161b22;
+    color: #c9d1d9;
+}
+.game {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+}
+.column { width: 48%; }
+.card {
+    background: #161b22;
+    padding: 15px;
+    margin: 8px 0;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.card.selected { border-color: #58a6ff; }
+.card.correct { color: #238636; border-color: #238636; }
+.card.wrong { color: #b45309; border-color: #b45309; }
+#score { margin-top: 16px; font-size: 20px; }
 </style>
 </head>
 <body>
 <h1>🔗 Eşleştirme Oyunu</h1>
+
 <div>
-<select id="mainUnitSelect">
-<option value="İslamiyet Öncesi Türk Tarihi">Tarih</option>
-<option value="Matematik">Matematik</option>
-</select>
-<select id="subUnitSelect"></select>
-<button id="startBtn">Başlat</button>
+    <select id="mainUnitSelect">
+        <option value="İslamiyet Öncesi Türk Tarihi">Tarih</option>
+        <option value="Matematik">Matematik</option>
+    </select>
+    <select id="subUnitSelect"></select>
+    <button id="startBtn">Başlat</button>
 </div>
+
 <div class="game">
-<div class="column" id="left"></div>
-<div class="column" id="right"></div>
+    <div class="column" id="left"></div>
+    <div class="column" id="right"></div>
 </div>
+
 <div id="score">Skor: 0</div>
 
 <script>
+let streak = 0;
+let score = 0;
+let selectedLeft = null;
+let selectedRight = null;
+let pairs = [];
+let currentPagePairs = [];
+const PAGE_SIZE = 5;
+
+const STORAGE_KEY = "matching_game_progress_v1";
+const generalWrongs = new Map();
+const statsIndex = {};
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playDing() {
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+    gain.connect(audioCtx.destination);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+}
+
+function playDong() {
+    const freqs = [440, 220, 110];
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    gain.connect(audioCtx.destination);
+
+    freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+    });
+}
+
+/* ===== VERİLER ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -101,9 +186,9 @@ const units = {
             { left: "Avarlar", right: "Üzengi yapımını Avrupalılara öğretmiş" },
             { left: "Avarlar", right: "Juan Juan Türkleri" },
             { left: "Avarlar", right: "Frank saldırılarıyla yıkılmış" },
-            { left: "Peçenekler, Avarlar, Tuna Bulgarları", right: "İstanbul'u kuşatmış" },
-            { left: "Peçenekler, Uzlar, Kıpçaklar", right: "Bizans'ta ücretli askerlik" },
-            { left: "Peçenekler, Uzlar, Kıpçaklar", right: "Malazgirt savaşı sırasında taraf değiştirmiş" },
+             { left: "Peçenekler", "Avar", "Tuna Bulgarları", right: "İstanbul'u kuşatmış" },
+            { left: "Peçenekler", "Uzlar", "Kıpçaklar", right: "Bizans'ta ücretli askerlik" },
+            { left: "Peçenekler", "Uzlar", "Kıpçaklar", right: "Malazgirt savaşı sırasında taraf değiştirmiş" },
             { left: "Uzlar", right: "Oğuzların Hristiyan olanı" },
             { left: "Uzlar", right: " Romanya'nın Dobruca - Gagavuz Türkleri" },
             { left: "Macarlar", right: "Türk tarihinde ilk defa Türkoloji enstitüsünü kurmuş" },
@@ -126,15 +211,15 @@ const units = {
             { left: "Kıpçaklar (Kumanlar)", right: "sarı,sarımtrak,sarı saçlı, öfkeli" },
             { left: "Kıpçaklar (Kumanlar)", right: "Altınorda Dev. Türkleşmesinde rol oynamış" },
             { left: "Hazarlar", right: "Museviliği kabul eden ilk ve son türk devleti" },
-            { left: "Hazarlar,Türgişler", right: "Emevilerle savaşıp maveraunnehirin islamlaşmasını önledi" },
+            { left: "Hazarlar","Türgişler", right: "Emevilerle savaşıp maveraunnehirin islamlaşmasını önledi" },
             { left: "Hazarlar", right: "Kürk yolunu kullanarak zenginleşmiş" },
             { left: "Maveraünnehir", right: "Seyhun ile Ceyhun arasındaki bölgey" },
             { left: "Hazarlar", right: "Türk tarihinde ilk kez ordusuna ücretli asker almış" },
-            { left: "Hazarlar", right: "Yaşadıkları döneme Pax Hazaria" },
+            { left: "Hazarlar", right: "Yaşadıkları döneme Pax Hazaria"" },
             { left: "Hazarlar", right: "Polonya'da Karaim veya Karaçay Türkleri" },
             { left: "Hazarlar", right: "Müslümanların başlarına Hazz adlı yönetici" }
         ]
-     },
+    },
     "Matematik": {
         "1. Ünite": [
             { left: "2+2", right: "4" },
@@ -143,86 +228,160 @@ const units = {
     }
 };
 
-let pairs=[], currentBatch=[], batchSize=5, score=0, selectedLeft=null, selectedRight=null;
-const left=document.getElementById("left"), right=document.getElementById("right");
-const mainUnitSelect=document.getElementById("mainUnitSelect"), subUnitSelect=document.getElementById("subUnitSelect");
-const startBtn=document.getElementById("startBtn");
-
-function updateSubUnits(){
-    subUnitSelect.innerHTML="";
-    Object.keys(units[mainUnitSelect.value]).forEach(s=>{
-        const o=document.createElement("option"); o.value=s; o.textContent=s; subUnitSelect.appendChild(o);
-    });
-}
-mainUnitSelect.onchange=updateSubUnits; updateSubUnits();
-
-function shuffle(a){return a.sort(()=>Math.random()-0.5);}
-
-function render(){
-    left.innerHTML=""; right.innerHTML="";
-    currentBatch.forEach(p=>{
-        const l=document.createElement("div"); l.className="card"; l.innerText=p.left; l.onclick=()=>selectLeft(l,p); left.appendChild(l);
-        const r=document.createElement("div"); r.className="card"; r.innerText=p.right; r.onclick=()=>selectRight(r,p); right.appendChild(r);
-    });
+/* ===== INDEX ===== */
+function buildIndex() {
+    Object.values(units).forEach(u =>
+        Object.values(u).forEach(list =>
+            list.forEach(q => {
+                const k = q.left + "||" + q.right;
+                if (!statsIndex[k]) {
+                    statsIndex[k] = { wrongCount: 0, correctInWrongs: 0 };
+                }
+            })
+        )
+    );
 }
 
-function nextBatch(){
-    if(pairs.length===0 && currentBatch.length===0){
-        if(confirm("Tüm sorular bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
-        return;
+/* ===== STORAGE ===== */
+function saveProgress() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        statsIndex,
+        generalWrongs: [...generalWrongs.keys()]
+    }));
+}
+
+function loadProgress() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Object.assign(statsIndex, data.statsIndex || {});
+    (data.generalWrongs || []).forEach(k => generalWrongs.set(k, true));
+}
+
+/* ===== OYUN ===== */
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+
+function resetCards() {
+    document.querySelectorAll(".card").forEach(c =>
+        c.classList.remove("selected","wrong")
+    );
+}
+
+function render() {
+    left.innerHTML = "";
+    right.innerHTML = "";
+    currentPagePairs.forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.left;
+        d.onclick = () => selectLeft(d, p);
+        left.appendChild(d);
+    });
+    currentPagePairs.forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.right;
+        d.onclick = () => selectRight(d, p);
+        right.appendChild(d);
+    });
+}
+
+/* ===== SEÇİM ===== */
+function selectLeft(el, p) {
+    resetCards();
+    el.classList.add("selected");
+    selectedLeft = p;
+    check();
+}
+
+function selectRight(el, p) {
+    resetCards();
+    el.classList.add("selected");
+    selectedRight = p;
+    check();
+}
+
+function check() {
+    if (!selectedLeft || !selectedRight) return;
+
+    const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
+    const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
+    const key = selectedLeft.left + "||" + selectedLeft.right;
+    const stat = statsIndex[key];
+
+    // Doğru kontrol
+    if (selectedLeft.right === selectedRight.right) {
+        streak++;
+        score++;
+        document.getElementById("score").innerText = "Skor: " + score;
+
+        leftCard.classList.add("correct");
+        rightCard.classList.add("correct");
+        playDing();
+
+        // Bir süre gösterip sonra sil
+        setTimeout(() => {
+            currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
+            if(currentPagePairs.length === 0) {
+                // Yeni sayfa veya ünite geçişi
+                if(pairs.length > 0) loadNextPage();
+                else if(confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
+            }
+            render();
+        }, 500);
+
+        selectedLeft = selectedRight = null;
+
+    } else { 
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
+        playDong();
+        setTimeout(() => resetCards(), 500);
+        selectedLeft = selectedRight = null;
     }
-    while(currentBatch.length<batchSize && pairs.length>0){
-        const p=pairs.shift();
-        currentBatch.push(p);
-    }
+}
+
+/* ===== SAYFA YÖNETİMİ ===== */
+function loadNextPage() {
+    currentPagePairs = shuffle([...pairs]).slice(0,PAGE_SIZE);
     render();
 }
 
-function selectLeft(el,p){
-    document.querySelectorAll("#left .card").forEach(c=>c.classList.remove("selected"));
-    el.classList.add("selected"); selectedLeft=p; checkMatch();
-}
-function selectRight(el,p){
-    document.querySelectorAll("#right .card").forEach(c=>c.classList.remove("selected"));
-    el.classList.add("selected"); selectedRight=p; checkMatch();
+function startNextUnit() {
+    let nextIndex = Object.keys(units).indexOf(mainUnitSelect.value) + 1;
+    if(nextIndex >= Object.keys(units).length) nextIndex = 0;
+    mainUnitSelect.selectedIndex = nextIndex;
+    updateSubUnits();
+    startBtn.click();
 }
 
-function checkMatch(){
-    if(!selectedLeft||!selectedRight) return;
-    const leftCard=[...left.children].find(c=>c.innerText===selectedLeft.left);
-    const rightCard=[...right.children].find(c=>c.innerText===selectedRight.right);
-    let match=false;
-    // Aynı left farklı right veya aynı right farklı left varsa da doğru kabul et
-    units[mainUnitSelect.value][subUnitSelect.value].forEach(p=>{
-        if(selectedLeft.left===p.left && selectedRight.right===p.right) match=true;
+/* ===== ÜNİTE ===== */
+function updateSubUnits() {
+    subUnitSelect.innerHTML = "";
+    Object.keys(units[mainUnitSelect.value]).forEach(s => {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        subUnitSelect.appendChild(o);
     });
-
-    if(selectedLeft.right===selectedRight.right || match){
-        leftCard.classList.add("correct"); rightCard.classList.add("correct");
-        score++; document.getElementById("score").innerText="Skor: "+score;
-        currentBatch=currentBatch.filter(p=>!(p.left===selectedLeft.left && p.right===selectedLeft.right));
-        nextBatch();
-    } else {
-        leftCard.classList.add("wrong"); rightCard.classList.add("wrong");
-    }
-    selectedLeft=selectedRight=null;
 }
 
-startBtn.onclick=()=>{
-    const m=mainUnitSelect.value, s=subUnitSelect.value;
-    pairs=shuffle(units[m][s].map(q=>({...q})));
-    currentBatch=[]; score=0;
-    document.getElementById("score").innerText="Skor: "+score;
-    nextBatch();
+mainUnitSelect.onchange = updateSubUnits;
+updateSubUnits();
+
+startBtn.onclick = () => {
+    const m = mainUnitSelect.value;
+    const s = subUnitSelect.value;
+    pairs = shuffle(units[m][s].map(q => q));
+    score = 0;
+    streak = 0;
+    document.getElementById("score").innerText = "Skor: 0";
+    loadNextPage();
 };
 
-function startNextUnit(){
-    const keys=Object.keys(units[mainUnitSelect.value]);
-    let nextIndex=keys.indexOf(subUnitSelect.value)+1;
-    if(nextIndex>=keys.length){ alert("Tüm üniteler tamamlandı."); return; }
-    subUnitSelect.value=keys[nextIndex];
-    startBtn.onclick();
-}
+/* ===== BAŞLAT ===== */
+buildIndex();
+loadProgress();
 </script>
 </body>
 </html>
