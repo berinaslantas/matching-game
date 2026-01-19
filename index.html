@@ -2,123 +2,27 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Eşleştirme Oyunu</title>
-
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
 <style>
-body {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #0d1117;
-    color: #c9d1d9;
-    margin: 0;
-    padding: 20px;
-    text-align: center;
-}
-h1 { margin-bottom: 12px; }
-select, button {
-    margin: 8px;
-    padding: 6px 12px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: 1px solid #30363d;
-    background: #161b22;
-    color: #c9d1d9;
-}
-.game {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 12px;
-}
-.column { width: 48%; }
-.card {
-    background: #161b22;
-    padding: 15px;
-    margin: 8px 0;
-    border-radius: 12px;
-    border: 1px solid #30363d;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-.card.selected { border-color: #58a6ff; }
-.card.correct { color: #238636; border-color: #238636; }
-.card.wrong { color: #b45309; border-color: #b45309; }
-#score { margin-top: 16px; font-size: 20px; }
+  body { font-family: Arial; padding: 20px; }
+  .question { margin-bottom: 10px; }
+  .left { display: inline-block; width: 200px; font-weight: bold; }
+  .right { display: inline-block; padding: 5px 10px; margin: 2px; border: 1px solid #333; cursor: pointer; }
+  .right.correct { background-color: #4CAF50; color: white; }
+  .right.wrong { background-color: #F44336; color: white; }
 </style>
 </head>
 <body>
-<h1>🔗 Eşleştirme Oyunu</h1>
 
-<div>
-    <select id="mainUnitSelect">
-        <option value="İslamiyet Öncesi Türk Tarihi">Tarih</option>
-        <option value="Matematik">Matematik</option>
-    </select>
-    <select id="subUnitSelect"></select>
-    <button id="startBtn">Başlat</button>
-</div>
+<h1>Eşleştirme Oyunu</h1>
+<div id="game"></div>
+<button id="nextUnitBtn" style="display:none;">Sonraki Üniteye Geç</button>
 
-<div class="game">
-    <div class="column" id="left"></div>
-    <div class="column" id="right"></div>
-</div>
-
-<div id="score">Skor: 0</div>
+<audio id="correctSound" src="correct.mp3"></audio>
+<audio id="wrongSound" src="wrong.mp3"></audio>
 
 <script>
-let streak = 0;
-let score = 0;
-let selectedLeft = null;
-let selectedRight = null;
-let pairs = [];
-let currentPagePairs = [];
-const PAGE_SIZE = 5;
-
-const STORAGE_KEY = "matching_game_progress_v1";
-const generalWrongs = new Map();
-const statsIndex = {};
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function playDing() {
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
-    gain.connect(audioCtx.destination);
-
-    const osc = audioCtx.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime);
-    osc.connect(gain);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.35);
-}
-
-function playDong() {
-    const freqs = [440, 220, 110];
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
-    gain.connect(audioCtx.destination);
-
-    freqs.forEach(f => {
-        const osc = audioCtx.createOscillator();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
-        osc.connect(gain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.6);
-    });
-}
-
-/* ===== VERİLER ===== */
+// ----------------- VERİLER -----------------
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -227,162 +131,102 @@ const units = {
         ]
     }
 };
+// --------------------------------------------
 
-/* ===== INDEX ===== */
-function buildIndex() {
-    Object.values(units).forEach(u =>
-        Object.values(u).forEach(list =>
-            list.forEach(q => {
-                const k = q.left + "||" + q.right;
-                if (!statsIndex[k]) {
-                    statsIndex[k] = { wrongCount: 0, correctInWrongs: 0 };
-                }
-            })
-        )
-    );
-}
+const gameDiv = document.getElementById("game");
+const nextUnitBtn = document.getElementById("nextUnitBtn");
+const correctSound = document.getElementById("correctSound");
+const wrongSound = document.getElementById("wrongSound");
 
-/* ===== STORAGE ===== */
-function saveProgress() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        statsIndex,
-        generalWrongs: [...generalWrongs.keys()]
-    }));
-}
+let unitsKeys = Object.keys(units);
+let currentUnitIndex = 0;
+let currentUnit = units[unitsKeys[currentUnitIndex]];
+let currentCategoryKeys = Object.keys(currentUnit);
+let activeQuestions = [];
+let questionPool = [];
 
-function loadProgress() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const data = JSON.parse(raw);
-    Object.assign(statsIndex, data.statsIndex || {});
-    (data.generalWrongs || []).forEach(k => generalWrongs.set(k, true));
-}
+function shuffleArray(a){ return a.sort(() => Math.random() - 0.5); }
 
-/* ===== OYUN ===== */
-function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
-
-function resetCards() {
-    document.querySelectorAll(".card").forEach(c =>
-        c.classList.remove("selected","wrong")
-    );
-}
-
-function render() {
-    left.innerHTML = "";
-    right.innerHTML = "";
-    currentPagePairs.forEach(p => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = p.left;
-        d.onclick = () => selectLeft(d, p);
-        left.appendChild(d);
+function initUnit() {
+    questionPool = [];
+    currentCategoryKeys.forEach(cat => {
+        // Her sorunun right değeri artık array olmalı
+        currentUnit[cat].forEach(q=>{
+            if(!Array.isArray(q.right)) q.right = [q.right];
+            questionPool.push(q);
+        });
     });
-    currentPagePairs.forEach(p => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = p.right;
-        d.onclick = () => selectRight(d, p);
-        right.appendChild(d);
-    });
+    questionPool = shuffleArray(questionPool);
+    loadNextQuestions();
 }
 
-/* ===== SEÇİM ===== */
-function selectLeft(el, p) {
-    resetCards();
-    el.classList.add("selected");
-    selectedLeft = p;
-    check();
-}
+function loadNextQuestions() {
+    gameDiv.innerHTML = "";
+    activeQuestions = questionPool.splice(0,5);
+    activeQuestions.forEach(q => addQuestionToScreen(q));
 
-function selectRight(el, p) {
-    resetCards();
-    el.classList.add("selected");
-    selectedRight = p;
-    check();
-}
-
-function check() {
-    if (!selectedLeft || !selectedRight) return;
-
-    const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
-    const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
-    const key = selectedLeft.left + "||" + selectedLeft.right;
-    const stat = statsIndex[key];
-
-    // Doğru kontrol
-    if (selectedLeft.right === selectedRight.right) {
-        streak++;
-        score++;
-        document.getElementById("score").innerText = "Skor: " + score;
-
-        leftCard.classList.add("correct");
-        rightCard.classList.add("correct");
-        playDing();
-
-        // Bir süre gösterip sonra sil
-        setTimeout(() => {
-            currentPagePairs = currentPagePairs.filter(p => p !== selectedLeft);
-            if(currentPagePairs.length === 0) {
-                // Yeni sayfa veya ünite geçişi
-                if(pairs.length > 0) loadNextPage();
-                else if(confirm("Bu ünite bitti. Sonraki üniteye geçmek ister misiniz?")) startNextUnit();
-            }
-            render();
-        }, 500);
-
-        selectedLeft = selectedRight = null;
-
-    } else { 
-        leftCard.classList.add("wrong");
-        rightCard.classList.add("wrong");
-        playDong();
-        setTimeout(() => resetCards(), 500);
-        selectedLeft = selectedRight = null;
+    if(activeQuestions.length === 0){
+        nextUnitBtn.style.display = "block";
+    } else {
+        nextUnitBtn.style.display = "none";
     }
 }
 
-/* ===== SAYFA YÖNETİMİ ===== */
-function loadNextPage() {
-    currentPagePairs = shuffle([...pairs]).slice(0,PAGE_SIZE);
-    render();
+function addQuestionToScreen(q){
+    let div = document.createElement("div");
+    div.className = "question";
+    let leftDiv = document.createElement("span");
+    leftDiv.className = "left";
+    leftDiv.textContent = q.left;
+    div.appendChild(leftDiv);
+
+    let rightDiv = document.createElement("span");
+    rightDiv.className = "right";
+    rightDiv.textContent = q.right.join(", "); // Görselde göstermek için tüm doğru seçenekleri birleştirebilirsin
+    rightDiv.addEventListener("click", () => checkAnswer(q, rightDiv));
+    div.appendChild(rightDiv);
+
+    gameDiv.appendChild(div);
 }
 
-function startNextUnit() {
-    let nextIndex = Object.keys(units).indexOf(mainUnitSelect.value) + 1;
-    if(nextIndex >= Object.keys(units).length) nextIndex = 0;
-    mainUnitSelect.selectedIndex = nextIndex;
-    updateSubUnits();
-    startBtn.click();
+function checkAnswer(question, element){
+    // Eğer element.textContent units'teki doğru seçeneklerden biriyle eşleşiyorsa
+    if(question.right.includes(element.textContent) || question.right.some(r => element.textContent.includes(r))){
+        element.classList.add("correct");
+        correctSound.currentTime = 0;
+        correctSound.play();
+        setTimeout(() => {
+            gameDiv.removeChild(element.parentElement);
+            if(questionPool.length > 0){
+                let newQ = questionPool.shift();
+                addQuestionToScreen(newQ);
+            } else if(gameDiv.children.length === 0){
+                nextUnitBtn.style.display = "block";
+            }
+        }, 500);
+    } else {
+        element.classList.add("wrong");
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+        setTimeout(()=> element.classList.remove("wrong"), 500);
+    }
 }
 
-/* ===== ÜNİTE ===== */
-function updateSubUnits() {
-    subUnitSelect.innerHTML = "";
-    Object.keys(units[mainUnitSelect.value]).forEach(s => {
-        const o = document.createElement("option");
-        o.value = s;
-        o.textContent = s;
-        subUnitSelect.appendChild(o);
-    });
-}
+nextUnitBtn.addEventListener("click", () => {
+    currentUnitIndex++;
+    if(currentUnitIndex < unitsKeys.length){
+        currentUnit = units[unitsKeys[currentUnitIndex]];
+        currentCategoryKeys = Object.keys(currentUnit);
+        initUnit();
+    } else {
+        alert("Tüm üniteler tamamlandı!");
+        nextUnitBtn.style.display = "none";
+    }
+});
 
-mainUnitSelect.onchange = updateSubUnits;
-updateSubUnits();
-
-startBtn.onclick = () => {
-    const m = mainUnitSelect.value;
-    const s = subUnitSelect.value;
-    pairs = shuffle(units[m][s].map(q => q));
-    score = 0;
-    streak = 0;
-    document.getElementById("score").innerText = "Skor: 0";
-    loadNextPage();
-};
-
-/* ===== BAŞLAT ===== */
-buildIndex();
-loadProgress();
+// Başlat
+initUnit();
 </script>
+
 </body>
 </html>
-
