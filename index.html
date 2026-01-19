@@ -4,51 +4,124 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Eşleştirme Oyunu</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d1117; color: #c9d1d9; margin:0; padding:20px; text-align:center; }
-h1 { margin-bottom:12px; }
-select, button { margin:8px; padding:6px 12px; font-size:16px; border-radius:6px; border:1px solid #30363d; background:#161b22; color:#c9d1d9; cursor:pointer; }
-.game { display:flex; justify-content:space-between; gap:12px; margin-top:12px; }
-.column { width:48%; }
-.card { background:#161b22; padding:15px; margin:8px 0; border-radius:12px; border:1px solid #30363d; font-size:18px; cursor:pointer; transition:all 0.15s ease; }
-.card.selected { border-color:#58a6ff; }
-.card.correct { color:#238636; border-color:#238636; }
-.card.wrong { color:#b45309; border-color:#b45309; }
-#score { margin-top:16px; font-size:20px; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+h1 { margin-bottom: 12px; }
+select, button {
+    margin: 8px;
+    padding: 6px 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    background: #161b22;
+    color: #c9d1d9;
+}
+.game {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+}
+.column { width: 48%; }
+.card {
+    background: #161b22;
+    padding: 15px;
+    margin: 8px 0;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.card.selected { border-color: #58a6ff; }
+.card.correct { color: #238636; border-color: #238636; }
+.card.wrong { color: #b45309; border-color: #b45309; }
+#score { margin-top: 16px; font-size: 20px; }
 </style>
 </head>
-<body>
 
+<body>
 <h1>🔗 Eşleştirme Oyunu</h1>
+
 <div>
-<select id="mainUnitSelect">
-<option value="İslamiyet Öncesi Türk Tarihi">Tarih</option>
-<option value="Matematik">Matematik</option>
-</select>
-<select id="subUnitSelect"></select>
-<button id="startBtn">Başlat</button>
-<button id="wrongsBtn">Genel Yanlışlar</button>
+    <select id="mainUnitSelect">
+        <option value="İslamiyet Öncesi Türk Tarihi">Tarih</option>
+        <option value="Matematik">Matematik</option>
+    </select>
+    <select id="subUnitSelect"></select>
+    <button id="startBtn">Başlat</button>
+    <button id="wrongsBtn">Genel Yanlışlar</button>
 </div>
 
 <div class="game">
-<div class="column" id="left"></div>
-<div class="column" id="right"></div>
+    <div class="column" id="left"></div>
+    <div class="column" id="right"></div>
 </div>
 
 <div id="score">Skor: 0</div>
 
 <script>
-let streak=0, score=0, selectedLeft=null, selectedRight=null, pairs=[];
-const STORAGE_KEY="matching_game_progress_v1";
-const generalWrongs=new Map();
-const statsIndex={};
-const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+/* ===== GLOBAL ===== */
+let streak = 0;
+let score = 0;
+let selectedLeft = null;
+let selectedRight = null;
+let pairs = [];
+let isGeneralWrongsMode = false;
 
-/* SES */
-function playDing(){const gain=audioCtx.createGain();gain.gain.setValueAtTime(0.0001,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(0.3,audioCtx.currentTime+0.01);gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.35);gain.connect(audioCtx.destination);const osc=audioCtx.createOscillator();osc.type="triangle";osc.frequency.setValueAtTime(700+streak*20,audioCtx.currentTime);osc.connect(gain);osc.start();osc.stop(audioCtx.currentTime+0.35);}
-function playDong(){const freqs=[440,220,110];const gain=audioCtx.createGain();gain.gain.setValueAtTime(0.0001,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(0.15,audioCtx.currentTime+0.01);gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.6);gain.connect(audioCtx.destination);freqs.forEach(f=>{const osc=audioCtx.createOscillator();osc.type="sine";osc.frequency.setValueAtTime(f,audioCtx.currentTime);osc.connect(gain);osc.start();osc.stop(audioCtx.currentTime+0.6);});}
+const STORAGE_KEY = "matching_game_progress_v1";
+const generalWrongs = new Map();
+const statsIndex = {};
 
-/* VERİ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+/* ===== SES (ORİJİNAL) ===== */
+function playDing() {
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+    gain.connect(audioCtx.destination);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(700 + streak*20, audioCtx.currentTime);
+    osc.connect(gain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+}
+
+function playDong() {
+    const freqs = [440, 220, 110];
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    gain.connect(audioCtx.destination);
+
+    freqs.forEach(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+        osc.connect(gain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+    });
+}
+
+/* ===== VERİ ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -75,75 +148,6 @@ const units = {
             { left: "Andronova", right: "Türk atalarının yaşadığı" },
             { left: "Karasuk", right: "ilk demir işlendiği yer" },
             { left: "Kelteminar", right: "yerleşik yaşam" }
-        ],
-        "Orta Asya Türkleri": [
-            { left: "Sakalar", right: "Bilinen ilk Türk boyu" },
-            { left: "Sakalar", right: "Alp Er Tunga" },
-            { left: "Sakalar", right: "lk Türk kadın hükümdar Tomris Hatun" },
-            { left: "Sakalar", right: "Amazon (kadın savaşçılar)" },
-            { left: "Sakalar", right: "Balbal (mezar taşı) dikme geleneği" },
-            { left: "Sakalar", right: "Atı evcilleştirmiş dünyada ilk üzengi" },
-            { left: "Sakalar", right: "Günümüzde Rusya Federasyonunda Yakut Türkleri" },
-            { left: "Sakalar", right: "Bozkırın kuyumcuları" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Kurucusu Teoman" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Başkenti Ötüken. Kutsal bölge veya Toprak Ana" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete Vatan Sevgisi(Tunguzlara toprak vermeyip) ilk Türk hükümdar" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete orduda onlu sistem" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Türk tarihinin ilk yazılı antlaşması Çinlilerle yapılan Kuzey Şansi" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada Mete Türk boylarını(26) bir bayrak altında toplayan ilk devlet" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada ilk defa siyasi birlik -Mete Han" },
-            { left: "Mukan Kağan", right: "I. Göktürklerde Türk siyasi birliği sağlayan" },
-            { left: "Kapgan Kağan", right: "II. Göktürklerde Türk siyasi birliği sağlayan" },
-            { left: "Batı Hun hükümdarı Çiçi ", right: " istiklali feda etmeyi gülünç ve utanç verici bulmuş " },
-            { left: "Batı Hun hükümdarı Balamir", right: "Kavimler göçüne önderlik etmiş" }
-        ],
-            "Avrupa Türkleri": [
-            { left: "Avrupa Hun Devleti", right: "Kurucusu Balamir -Macaristanda" },
-            { left: "Avrupa Hun Devleti en parlak dönem", right: "Attila" },
-            { left: "Avrupa Hun Devleti", right: "Avrupa'da kurulan ilk Türk devleti" },
-            { left: "Hem Orta Asya hem Avrupada Kurulanlar", right: "Büyük Hunlar ve Avarlar" },
-            { left: "Avrupa Hun Devleti", right: "Margos Barışı ve Anatolyus Ant." },
-            { left: "Avrupa Hun Devleti", right: "Galya ve İtalya seferleri (Papanın ricası)" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Papa I. Leon'un ricası", "Roma'nın Hristiyanlarca kutsal olması", "Batı Roma'nın gücünü kırdığına inanması",
-"Doğuda Sasani tehlikesinin bulunması" },
-            { left: "Attilla'nın ünvanları ", right: "(Etzel (Nibelungen)(Hun burgant mücadelesi)", "Cesur Kavimlerin Efendisi", "Tanrının kamçısı" },
-            { left: "Avarlar", right: "Kurucusu Bayan Han" },
-            { left: "Avarlar", right: "İstanbul'u kuşatan ilk Türk devleti (2 kere)" },
-            { left: "Avarlar", right: "Üzengi yapımını Avrupalılara öğretmiş" },
-            { left: "Avarlar", right: "Juan Juan Türkleri" },
-            { left: "Avarlar", right: "Frank saldırılarıyla yıkılmış" },
-            { left: "Peçenekler", "Avar", "Tuna Bulgarları", right: "İstanbul'u kuşatmış" },
-            { left: "Peçenekler", "Uzlar", "Kıpçaklar", right: "Bizans'ta ücretli askerlik" },
-            { left: "Peçenekler", "Uzlar", "Kıpçaklar", right: "Malazgirt savaşı sırasında taraf değiştirmiş" },
-            { left: "Uzlar", right: "Oğuzların Hristiyan olanı" },
-            { left: "Uzlar", right: " Romanya'nın Dobruca - Gagavuz Türkleri" },
-            { left: "Macarlar", right: "Türk tarihinde ilk defa Türkoloji enstitüsünü kurmuş" },
-            { left: "Macarlar", right: "Türk kurultayı (2008-) BUGAC" },
-            { left: "Macarlar", right: "Bilinen ilk liderleri Arpad" },
-            { left: "Bulgarlar", right: "kelime anlamı karışık - karışmak" },
-            { left: "Bulgarlar (İtil)", right: "Almış Han zamanında Müslüman" },
-            { left: "Bulgarlar (İtil)", right: "İbn-i Fablan Rihle (Yolculuk) eseri" },
-            { left: "Bulgarlar (İtil)", right: "İlk Müslüman Türk devletidir" },
-            { left: "Bulgarlar (İtil)", right: "Avrupa'nın kuzeyinde kurulmuş" },
-            { left: "Bulgarlar (İtil)", right: "İslamiyet devletin resmi dini diyen ilk Türk devleti" },
-            { left: "Bulgarlar (Tuna)", right: "Barış Han zamanında Hristiyan " },
-            { left: "Bulgarlar (Tuna)", right: "Han unvanını bırakıp Çar unvanı -Simon" },
-            { left: "Sibirler", right: "yoldan sapan" },
-            { left: "Kıpçaklar (Kumanlar)", right: "Oğuzlarla -Dede Korkut Hikayeleri" },
-            { left: "Kıpçaklar (Kumanlar)", right: "Ruslarla mücadelede İgor destanı" },
-            { left: "Kıpçaklar (Kumanlar)", right: "Codex Cumanius adında sözlük " },
-            { left: "Kıpçaklar (Kumanlar)", right: "Eyyubilerin ve memlüklülerin ordusunda ücretli askerlik" },
-            { left: "Kıpçaklar (Kumanlar)", right: "Bölgeye isimlerini vermişler Dest-i Kıpçak" },
-            { left: "Kıpçaklar (Kumanlar)", right: "sarı,sarımtrak,sarı saçlı, öfkeli" },
-            { left: "Kıpçaklar (Kumanlar)", right: "Altınorda Dev. Türkleşmesinde rol oynamış" },
-            { left: "Hazarlar", right: "Museviliği kabul eden ilk ve son türk devleti" },
-            { left: "Hazarlar","Türgişler", right: "Emevilerle savaşıp maveraunnehirin islamlaşmasını önledi" },
-            { left: "Hazarlar", right: "Kürk yolunu kullanarak zenginleşmiş" },
-            { left: "Maveraünnehir", right: "Seyhun ile Ceyhun arasındaki bölgey" },
-            { left: "Hazarlar", right: "Türk tarihinde ilk kez ordusuna ücretli asker almış" },
-            { left: "Hazarlar", right: "Yaşadıkları döneme Pax Hazaria"" },
-            { left: "Hazarlar", right: "Polonya'da Karaim veya Karaçay Türkleri" },
-            { left: "Hazarlar", right: "Müslümanların başlarına Hazz adlı yönetici" }
         ]
      },
     "Matematik": {
@@ -154,54 +158,170 @@ const units = {
     }
 };
 
-
-/* INDEX */
-function buildIndex(){Object.values(units).forEach(u=>Object.values(u).forEach(list=>list.forEach(q=>{const k=q.left+"||"+q.right;if(!statsIndex[k]) statsIndex[k]={wrongCount:0,correctInWrongs:0};})));}
-
-/* STORAGE */
-function saveProgress(){localStorage.setItem(STORAGE_KEY,JSON.stringify({statsIndex,generalWrongs:[...generalWrongs.keys()]}));}
-function loadProgress(){const raw=localStorage.getItem(STORAGE_KEY);if(!raw) return; const data=JSON.parse(raw); Object.assign(statsIndex,data.statsIndex||{}); (data.generalWrongs||[]).forEach(k=>generalWrongs.set(k,true));}
-
-/* OYUN */
-function shuffle(a){return a.sort(()=>Math.random()-0.5);}
-function resetCards(){document.querySelectorAll(".card").forEach(c=>c.classList.remove("wrong"));}
-function render(){
-const leftCol=document.getElementById("left"), rightCol=document.getElementById("right");
-leftCol.innerHTML=""; rightCol.innerHTML="";
-shuffle([...pairs]).forEach(p=>{const d=document.createElement("div");d.className="card";d.innerText=p.left; d.onclick=()=>selectLeft(d,p); leftCol.appendChild(d);});
-shuffle([...pairs]).forEach(p=>{const d=document.createElement("div");d.className="card";d.innerText=p.right; d.onclick=()=>selectRight(d,p); rightCol.appendChild(d);});
+/* ===== INDEX ===== */
+function buildIndex() {
+    Object.values(units).forEach(u =>
+        Object.values(u).forEach(list =>
+            list.forEach(q => {
+                const k = q.left + "||" + q.right;
+                if (!statsIndex[k]) {
+                    statsIndex[k] = { wrongCount: 0, correctInWrongs: 0 };
+                }
+            })
+        )
+    );
 }
-function selectLeft(el,p){el.classList.add("selected"); selectedLeft=p; check();}
-function selectRight(el,p){el.classList.add("selected"); selectedRight=p; check();}
-function check(){if(!selectedLeft||!selectedRight)return;
-const leftCard=[...document.getElementById("left").children].find(c=>c.innerText===selectedLeft.left);
-const rightCard=[...document.getElementById("right").children].find(c=>c.innerText===selectedRight.right);
-const key=selectedLeft.left+"||"+selectedLeft.right; const stat=statsIndex[key];
-if(selectedLeft.right===selectedRight.right){streak++; score++; document.getElementById("score").innerText="Skor: "+score; leftCard.classList.add("correct"); rightCard.classList.add("correct");
-if(generalWrongs.has(key)){ stat.correctInWrongs++; if(stat.correctInWrongs>=2){ generalWrongs.delete(key); stat.correctInWrongs=0; stat.wrongCount=0; } }
-pairs=pairs.filter(p=>p!==selectedLeft); setTimeout(render,180);} 
-else{playDong(); leftCard.classList.add("wrong"); rightCard.classList.add("wrong"); stat.wrongCount++; if(stat.wrongCount>=3) generalWrongs.set(key,true);}
-saveProgress(); selectedLeft=selectedRight=null;}
 
-/* ÜNİTE */
-const mainUnitSelect=document.getElementById("mainUnitSelect");
-const subUnitSelect=document.getElementById("subUnitSelect");
-const startBtn=document.getElementById("startBtn");
-const wrongsBtn=document.getElementById("wrongsBtn");
+/* ===== STORAGE ===== */
+function saveProgress() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        statsIndex,
+        generalWrongs: [...generalWrongs.keys()]
+    }));
+}
 
-function updateSubUnits(){subUnitSelect.innerHTML=""; Object.keys(units[mainUnitSelect.value]).forEach(s=>{const o=document.createElement("option"); o.value=s; o.textContent=s; subUnitSelect.appendChild(o);});}
-mainUnitSelect.onchange=updateSubUnits;
+function loadProgress() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Object.assign(statsIndex, data.statsIndex || {});
+    (data.generalWrongs || []).forEach(k => generalWrongs.set(k, true));
+}
+
+/* ===== OYUN ===== */
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+
+function resetCards() {
+    document.querySelectorAll(".card").forEach(c =>
+        c.classList.remove("selected","wrong")
+    );
+}
+
+function render() {
+    left.innerHTML = "";
+    right.innerHTML = "";
+    shuffle([...pairs]).forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.left;
+        d.onclick = () => selectLeft(d, p);
+        left.appendChild(d);
+    });
+    shuffle([...pairs]).forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.right;
+        d.onclick = () => selectRight(d, p);
+        right.appendChild(d);
+    });
+}
+
+function selectLeft(el, p) {
+    resetCards();
+    document.querySelectorAll("#left .card").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedLeft = p;
+    check();
+}
+
+function selectRight(el, p) {
+    resetCards();
+    document.querySelectorAll("#right .card").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedRight = p;
+    check();
+}
+
+function check() {
+    if (!selectedLeft || !selectedRight) return;
+
+    const leftCard = [...left.children].find(c => c.innerText === selectedLeft.left);
+    const rightCard = [...right.children].find(c => c.innerText === selectedRight.right);
+    const key = selectedLeft.left + "||" + selectedLeft.right;
+    const stat = statsIndex[key];
+
+    if (selectedLeft.right === selectedRight.right) {
+        streak++;
+        playDing();
+        score++;
+        document.getElementById("score").innerText = "Skor: " + score;
+
+        leftCard.classList.add("correct");
+        rightCard.classList.add("correct");
+
+        if (generalWrongs.has(key)) {
+            stat.correctInWrongs++;
+            if (stat.correctInWrongs >= 2) {
+                generalWrongs.delete(key);
+                stat.correctInWrongs = 0;
+                stat.wrongCount = 0;
+            }
+        }
+
+        pairs = pairs.filter(p => p !== selectedLeft);
+        setTimeout(render, 180);
+    } else {
+        playDong();
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
+        stat.wrongCount++;
+        if (stat.wrongCount >= 3) generalWrongs.set(key, true);
+    }
+
+    saveProgress();
+    selectedLeft = selectedRight = null;
+}
+
+/* ===== ÜNİTE ===== */
+function updateSubUnits() {
+    subUnitSelect.innerHTML = "";
+    Object.keys(units[mainUnitSelect.value]).forEach(s => {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        subUnitSelect.appendChild(o);
+    });
+}
+
+mainUnitSelect.onchange = updateSubUnits;
 updateSubUnits();
 
-startBtn.onclick=()=>{const m=mainUnitSelect.value; const s=subUnitSelect.value; pairs=units[m][s].map(q=>q); score=0; document.getElementById("score").innerText="Skor: 0"; render();};
-
-/* GENEL YANLIŞLAR */
-wrongsBtn.onclick=()=>{
-if(generalWrongs.size===0){ alert("Genel yanlış yok."); return; }
-pairs=[]; generalWrongs.forEach((v,k)=>{const [l,r]=k.split("||"); pairs.push({left:l,right:r});});
-score=0; document.getElementById("score").innerText="Skor: 0"; render();
+startBtn.onclick = () => {
+    const m = mainUnitSelect.value;
+    const s = subUnitSelect.value;
+    pairs = units[m][s].map(q => q);
+    score = 0;
+    streak = 0;
+    isGeneralWrongsMode = false;
+    document.getElementById("score").innerText = "Skor: 0";
+    render();
 };
 
+/* ===== GENEL YANLIŞLAR ===== */
+function startGeneralWrongsMode() {
+    if (generalWrongs.size === 0) {
+        alert("Genel yanlış yok 🎉");
+        return;
+    }
+
+    isGeneralWrongsMode = true;
+
+    pairs = [];
+    generalWrongs.forEach((_, key) => {
+        const [left, right] = key.split("||");
+        pairs.push({ left, right });
+    });
+
+    score = 0;
+    streak = 0;
+    document.getElementById("score").innerText = "Genel Yanlışlar";
+
+    render();
+}
+
+wrongsBtn.onclick = startGeneralWrongsMode;
+
+/* ===== BAŞLAT ===== */
 buildIndex();
 loadProgress();
 </script>
