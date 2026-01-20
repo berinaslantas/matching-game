@@ -68,7 +68,7 @@ const units = {
 };
 
 const PAGE_SIZE = 5;
-let pool=[], leftSlots=[], rightSlots=[];
+let pool=[], activePairs=[];
 let selL=null, selR=null;
 let solvedIndexes=[];
 
@@ -90,59 +90,77 @@ mainUnit.onchange = loadSub;
 /* ===== BAŞLAT ===== */
 function startGame(){
     pool = [...units[mainUnit.value][subUnit.value]];
-    const first = pool.splice(0,PAGE_SIZE);
-    leftSlots = first.map(p=>p.left);
-    rightSlots = first.map(p=>p.right).reverse(); // SAĞ BLOK: right değerleri ters sıra
-    solvedIndexes = [];
+    activePairs = pool.splice(0,PAGE_SIZE);
+    // SAĞ BLOK: ters sıra right
+    activePairs.forEach((p,i)=>{
+        p.slot = i; // slot index tut
+    });
+    solvedIndexes=[];
     selL=selR=null;
     render();
 }
 
 /* ===== RENDER ===== */
 function render(){
+    const leftCol = document.getElementById("leftCol");
+    const rightCol = document.getElementById("rightCol");
     leftCol.innerHTML="";
     rightCol.innerHTML="";
-    leftSlots.forEach((t,i)=>{
+
+    // SOL BLOK
+    activePairs.forEach((p,i)=>{
         const d=document.createElement("div");
-        d.className="card"; d.innerText=t;
-        d.onclick=()=>{selL=i; d.classList.add("selected"); selectCheck();};
+        d.className="card"; d.innerText=p.left;
+        d.onclick=()=>{selL=i; clearSelected(); d.classList.add("selected"); selectCheck();};
+        if(p.correct) d.classList.add("correct");
         leftCol.appendChild(d);
     });
-    rightSlots.forEach((t,i)=>{
+
+    // SAĞ BLOK
+    const rightOrder = activePairs.map(p=>p.right).slice().reverse();
+    rightOrder.forEach((text,i)=>{
         const d=document.createElement("div");
-        d.className="card"; d.innerText=t;
-        d.onclick=()=>{selR=i; d.classList.add("selected"); selectCheck();};
+        d.className="card"; d.innerText=text;
+        d.onclick=()=>{
+            selR=i;
+            clearSelected();
+            d.classList.add("selected");
+            selectCheck();
+        };
+        const origIndex = activePairs.length - 1 - i;
+        if(activePairs[origIndex].correct) d.classList.add("correct");
         rightCol.appendChild(d);
     });
+}
+
+function clearSelected(){
+    document.querySelectorAll(".card.selected").forEach(c=>c.classList.remove("selected"));
 }
 
 /* ===== SEÇİM ===== */
 function selectCheck(){
     if(selL===null || selR===null) return;
-    const l = leftSlots[selL];
-    const r = rightSlots[selR];
-    const correct = units[mainUnit.value][subUnit.value].some(p=>p.left===l && p.right===r);
-    const lCard = leftCol.children[selL];
-    const rCard = rightCol.children[selR];
+    const leftPair = activePairs[selL];
+    const rightIndex = activePairs.length - 1 - selR; // ters sıra
+    const rightPair = activePairs[rightIndex];
 
-    if(correct){
-        lCard.classList.add("correct");
-        rCard.classList.add("correct");
+    if(leftPair === rightPair){
+        leftPair.correct = true;
         solvedIndexes.push(selL);
 
-        if(solvedIndexes.length===2 && pool.length>=2){
-            const newPairs=[pool.shift(), pool.shift()];
-            // SOL BLOK: boşalan slotlara sırayla
-            solvedIndexes.forEach((idx,i)=>leftSlots[idx]=newPairs[i].left);
-            // SAĞ BLOK: ters çapraz mantık
-            rightSlots[solvedIndexes[0]] = newPairs[1].right; // ikinci yeni sorunun cevabı 1. slot
-            rightSlots[solvedIndexes[1]] = newPairs[0].right; // birinci yeni sorunun cevabı 2. slot
+        if(solvedIndexes.length === 2 && pool.length >=2){
+            const newPairs = [pool.shift(), pool.shift()];
+            // SOL BLOK: boş slotlara sırayla
+            solvedIndexes.forEach((idx,i)=>activePairs[idx] = newPairs[i]);
             solvedIndexes=[];
         }
     } else {
-        lCard.classList.add("wrong");
-        rCard.classList.add("wrong");
-        setTimeout(()=>{lCard.classList.remove("wrong"); rCard.classList.remove("wrong");},300);
+        // yanlışsa kısa renk efekti
+        const leftCard = leftCol.children[selL];
+        const rightCard = rightCol.children[selR];
+        leftCard.classList.add("wrong");
+        rightCard.classList.add("wrong");
+        setTimeout(()=>{leftCard.classList.remove("wrong"); rightCard.classList.remove("wrong");},300);
     }
 
     selL=selR=null;
