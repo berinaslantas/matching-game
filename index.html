@@ -4,42 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eşleştirme Oyunu</title>
-
 <style>
-body {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #0d1117;
-    color: #c9d1d9;
-    padding: 20px;
-    text-align: center;
-}
-select, button {
-    margin: 6px;
-    padding: 6px 12px;
-    background: #161b22;
-    color: #c9d1d9;
-    border: 1px solid #30363d;
-    border-radius: 6px;
-}
-.game {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; text-align: center; }
+select, button { margin: 6px; padding: 6px 12px; background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; }
+.game { display: flex; gap: 12px; margin-top: 12px; }
 .column { width: 50%; }
-.card {
-    background: #161b22;
-    padding: 14px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: 1px solid #30363d;
-    cursor: pointer;
-    transition: 0.15s;
-    color: #c9d1d9;
-}
+.card { background: #161b22; padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #30363d; cursor: pointer; transition: 0.15s; color: #c9d1d9; }
 .card.selected { border-color: #58a6ff; }
 .card.correct { color:#2ea043; }
 .card.wrong { color:#ff7f0e; }
+.card.empty { visibility: hidden; }
 </style>
 </head>
 <body>
@@ -57,6 +31,11 @@ select, button {
 </div>
 
 <script>
+const mainUnit = document.getElementById("mainUnit");
+const subUnit = document.getElementById("subUnit");
+const leftCol = document.getElementById("leftCol");
+const rightCol = document.getElementById("rightCol");
+
 /* ===== VERİLER ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
@@ -67,64 +46,14 @@ const units = {
             { left: "İran Kaynakları", right: "Güzel İnsan" },
             { left: "Çin Kaynakları", right: "Miğfer" },
             { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
-            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
-        ],
-        "Orta Asya Kültür Merkezleri": [
-            { left: "Anav", right: "en eski (At ilk kez)" },
-            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
-            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
-            { left: "Andronova", right: "Türk atalarının yaşadığı" },
-            { left: "Karasuk", right: "ilk demir işlendiği yer" },
-            { left: "Kelteminar", right: "yerleşik yaşam" }
-        ],
-        "Boylar": [
-            { left: "Anav", right: "en eski (At ilk kez)" },
-            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
-            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
-            { left: "Andronova", right: "Türk atalarının yaşadığı" },
-            { left: "Karasuk", right: "ilk demir işlendiği yer" },
-            { left: "Kelteminar", right: "yerleşik yaşam" }
-        ],
-        "Orta Asya Türkleri": [
-            { left: "Sakalar", right: "Bilinen ilk Türk boyu" },
-            { left: "Sakalar", right: "Alp Er Tunga" },
-            { left: "Sakalar", right: "lk Türk kadın hükümdar Tomris Hatun" },
-            { left: "Sakalar", right: "Amazon (kadın savaşçılar)" },
+            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" },
             { left: "Sakalar", right: "Balbal (mezar taşı) dikme geleneği" },
             { left: "Sakalar", right: "Atı evcilleştirmiş dünyada ilk üzengi" },
             { left: "Sakalar", right: "Günümüzde Rusya Federasyonunda Yakut Türkleri" },
             { left: "Sakalar", right: "Bozkırın kuyumcuları" },
             { left: "Asya Hun Devleti (Büyük Hun)", right: "Kurucusu Teoman" },
             { left: "Asya Hun Devleti (Büyük Hun)", right: "Başkenti Ötüken. Kutsal bölge veya Toprak Ana" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete Vatan Sevgisi(Tunguzlara toprak vermeyip) ilk Türk hükümdar" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete orduda onlu sistem" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Türk tarihinin ilk yazılı antlaşması Çinlilerle yapılan Kuzey Şansi" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada Mete Türk boylarını(26) bir bayrak altında toplayan ilk devlet" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada ilk defa siyasi birlik -Mete Han" },
-            { left: "Mukan Kağan", right: "I. Göktürklerde Türk siyasi birliği sağlayan" },
-            { left: "Kapgan Kağan", right: "II. Göktürklerde Türk siyasi birliği sağlayan" },
-            { left: "Batı Hun hükümdarı Çiçi ", right: " istiklali feda etmeyi gülünç ve utanç verici bulmuş " },
-            { left: "Batı Hun hükümdarı Balamir", right: "Kavimler göçüne önderlik etmiş" }
-        ],
-        "Avrupa Türkleri": [
-            { left: "Avrupa Hun Devleti", right: "Kurucusu Balamir -Macaristanda" },
-            { left: "Avrupa Hun Devleti en parlak dönem", right: "Attila" },
-            { left: "Avrupa Hun Devleti", right: "Avrupa'da kurulan ilk Türk devleti" },
-            { left: "Hem Orta Asya hem Avrupada Kurulanlar", right: "Büyük Hunlar ve Avarlar" },
-            { left: "Avrupa Hun Devleti", right: "Margos Barışı ve Anatolyus Ant." },
-            { left: "Avrupa Hun Devleti", right: "Galya ve İtalya seferleri (Papanın ricası)" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Papa I. Leon'un ricası" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Roma'nın Hristiyanlarca kutsal olması" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Batı Roma'nın gücünü kırdığına inanması" },
-            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Doğuda Sasani tehlikesinin bulunması" },
-            { left: "Attilla'nın ünvanları", right: "(Etzel (Nibelungen)(Hun burgant mücadelesi)" },
-            { left: "Attilla'nın ünvanları", right: "Cesur Kavimlerin Efendisi" },
-            { left: "Attilla'nın ünvanları", right: "Tanrının kamçısı" },
-            { left: "Avarlar", right: "Kurucusu Bayan Han" },
-            { left: "Avarlar", right: "İstanbul'u kuşatan ilk Türk devleti (2 kere)" },
-            { left: "Avarlar", right: "Üzengi yapımını Avrupalılara öğretmiş" },
-            { left: "Avarlar", right: "Juan Juan Türkleri" },
-            { left: "Avarlar", right: "Frank saldırılarıyla yıkılmış" }
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete Vatan Sevgisi (Tunguzlara toprak vermeyip) ilk Türk hükümdar" }
         ]
     },
     "Matematik": {
@@ -137,163 +66,135 @@ const units = {
 
 const PAGE_SIZE = 5;
 let pool = [];
-let active = [];
-let selLeft = null;
-let selRight = null;
-let streak = 0;
+let activeLeft = [];
+let activeRight = [];
+let selLeftIndex = null;
+let selRightIndex = null;
 
-/* ===== SESLER ===== */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function playCorrect() {
-    streak++;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = "triangle";
-    let freq = 800 * (1 + streak*0.2);
-    if (freq > 2000) freq = 2000;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.4);
-}
-
-function playWrong() {
-    streak = 0;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.5);
-}
-
-/* ===== GENEL YANLIŞLAR ===== */
-const STORAGE_KEY = "general_wrongs_v4";
-let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-function saveWrongs() { localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
-function markWrong(p) {
-    const k = p.left + "||" + p.right;
-    if (!generalWrongs[k]) generalWrongs[k] = { wrong: 0, correct: 0, pair: p };
-    generalWrongs[k].wrong++;
-    saveWrongs();
-}
-function markCorrect(p) {
-    const k = p.left + "||" + p.right;
-    if (!generalWrongs[k]) return;
-    generalWrongs[k].correct++;
-    if (generalWrongs[k].correct >= 2) delete generalWrongs[k];
-    saveWrongs();
-}
-
-/* ===== OYUN ===== */
+/* ===== GENEL ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+/* ===== SELECTOR ===== */
 function fillSelectors() {
     mainUnit.innerHTML = "";
     Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
     loadSub();
 }
-
 function loadSub() {
     subUnit.innerHTML = "";
     Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
 }
-
 mainUnit.onchange = loadSub;
 
+/* ===== OYUN BAŞLAT ===== */
 function startGame() {
-    streak = 0;
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
-    active = pool.splice(0, PAGE_SIZE);
-    render();
+    initBoard();
 }
 
 function startGeneralWrongs() {
-    streak = 0;
-    pool = shuffle(Object.values(generalWrongs).map(o => o.pair));
-    active = pool.splice(0, PAGE_SIZE);
+    const g = JSON.parse(localStorage.getItem("general_wrongs_v4") || "{}");
+    pool = shuffle(Object.values(g).map(o => o.pair));
+    initBoard();
+}
+
+function initBoard() {
+    activeLeft = [];
+    activeRight = [];
+
+    for (let i = 0; i < PAGE_SIZE; i++) {
+        const p = pool.shift();
+        if (!p) break;
+        activeLeft.push(p);
+        activeRight.push(p);
+    }
+
+    // SAĞ BLOĞU RASTGELE YERLEŞTİR
+    activeRight = shuffle([...activeRight]);
+
     render();
 }
 
+/* ===== RENDER ===== */
 function render() {
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
 
-    active.forEach(p => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = p.left;
-        d.onclick = () => { selLeft = p; select(d); };
-        leftCol.appendChild(d);
+    activeLeft.forEach((p, i) => {
+        if (!p) return leftCol.appendChild(empty());
+        leftCol.appendChild(card(p.left, () => selectLeft(i)));
     });
 
-    shuffle([...active]).forEach(p => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = p.right;
-        d.onclick = () => { selRight = p; select(d); };
-        rightCol.appendChild(d);
+    activeRight.forEach((p, i) => {
+        if (!p) return rightCol.appendChild(empty());
+        rightCol.appendChild(card(p.right, () => selectRight(i)));
     });
 }
 
-function select(el) {
+function card(text, fn) {
+    const d = document.createElement("div");
+    d.className = "card";
+    d.innerText = text;
+    d.onclick = fn;
+    return d;
+}
+
+function empty() {
+    const d = document.createElement("div");
+    d.className = "card empty";
+    return d;
+}
+
+/* ===== SEÇİM ===== */
+function selectLeft(i) {
+    clearSelect();
+    selLeftIndex = i;
+    leftCol.children[i].classList.add("selected");
+    check();
+}
+function selectRight(i) {
+    clearSelect();
+    selRightIndex = i;
+    rightCol.children[i].classList.add("selected");
+    check();
+}
+function clearSelect() {
     document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    el.classList.add("selected");
-    if (selLeft && selRight) check();
 }
 
+/* ===== KONTROL ===== */
 function check() {
-    // DOM kartları
-    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left && c.style.color !== "#2ea043");
-    const rCard = [...rightCol.children].find(c => c.innerText === selRight.right && c.style.color !== "#2ea043");
+    if (selLeftIndex === null || selRightIndex === null) return;
 
-    // sağdaki doğru cevaplar listesi
-    const correctRights = active.filter(p => p.left === selLeft.left).map(p => p.right);
+    const L = activeLeft[selLeftIndex];
+    const R = activeRight[selRightIndex];
 
-    // doğru mu kontrol et
-    const correct = correctRights.includes(selRight.right);
-
-    if (correct) {
-        // sadece yazı rengini değiştir
-        lCard.style.color = "#2ea043";
-        rCard.style.color = "#2ea043";
-
-        playCorrect();
-        markCorrect(selLeft);
-
-        setTimeout(() => {
-            // sadece seçilen pair'i sil, aynı soldaki diğer doğru cevaplar kalır
-            const idx = active.findIndex(p => p.left === selLeft.left && p.right === selRight.right);
-            if (idx !== -1) active.splice(idx, 1);
-
-            // pool'dan PAGE_SIZE kadar ekle
-            while (active.length < PAGE_SIZE && pool.length > 0) {
-                active.push(pool.shift());
-            }
-
-            selLeft = selRight = null;
-            render();
-        }, 150);
-
-    } else {
-        lCard.style.color = "#ff7f0e";
-        rCard.style.color = "#ff7f0e";
-
-        playWrong();
-        markWrong(selLeft);
-
-        setTimeout(() => {
-            lCard.style.color = "#c9d1d9";
-            rCard.style.color = "#c9d1d9";
-            selLeft = selRight = null;
-        }, 300);
+    // ✅ DOĞRU KONTROL (L === R)
+    if (L && R && L === R) {
+        activeLeft[selLeftIndex] = null;
+        activeRight[selRightIndex] = null;
+        refill();
     }
+
+    selLeftIndex = selRightIndex = null;
+    render();
+}
+
+/* ===== SLOT DOLDUR ===== */
+function refill() {
+    if (!pool.length) return;
+
+    const p = pool.shift();
+
+    const emptyLeft = activeLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+    const emptyRight = activeRight.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+
+    if (emptyLeft.length) activeLeft[rand(emptyLeft)] = p;
+    if (emptyRight.length) activeRight[rand(emptyRight)] = p;
+
+    // HER SEFERİNDE SAĞ BLOĞU RASTGELE KARISTIR
+    activeRight = shuffle([...activeRight]);
 }
 
 fillSelectors();
