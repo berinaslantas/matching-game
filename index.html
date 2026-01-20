@@ -34,7 +34,6 @@ select, button {
     border-radius: 10px;
     border: 1px solid #30363d;
     cursor: pointer;
-    transition: 0.15s;
 }
 .card.selected { border-color: #58a6ff; }
 .card.correct { color:#2ea043; }
@@ -55,7 +54,7 @@ select, button {
 </div>
 
 <script>
-/* ================= VERİLER ================= */
+/* ===== VERİ ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -94,119 +93,108 @@ const units = {
     }
 };
 
-/* ================= OYUN ================= */
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 4;
 let pool = [];
 let leftSlots = [];
 let rightSlots = [];
-let selLeftIndex = null;
-let selRightIndex = null;
+let selL = null;
+let selR = null;
+let correctCounter = 0;
 
-function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
 /* ===== SELECT ===== */
-function fillSelectors() {
+function fillSelectors(){
     mainUnit.innerHTML = "";
-    Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
+    Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`);
     loadSub();
 }
-function loadSub() {
+function loadSub(){
     subUnit.innerHTML = "";
-    Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
+    Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
 }
 mainUnit.onchange = loadSub;
 
 /* ===== BAŞLAT ===== */
-function startGame() {
+function startGame(){
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
     const first = pool.splice(0, PAGE_SIZE);
-
-    leftSlots = first.map(p => p.left);
-    rightSlots = shuffle(first.map(p => p.right));
-
+    leftSlots = first.map(p=>p.left);
+    rightSlots = shuffle(first.map(p=>p.right));
+    correctCounter = 0;
     render();
 }
 
 /* ===== RENDER ===== */
-function render() {
-    leftCol.innerHTML = "";
-    rightCol.innerHTML = "";
+function render(){
+    leftCol.innerHTML="";
+    rightCol.innerHTML="";
 
-    leftSlots.forEach((txt, i) => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = txt;
-        d.onclick = () => selectLeft(i, d);
+    leftSlots.forEach((t,i)=>{
+        const d=document.createElement("div");
+        d.className="card";
+        d.innerText=t;
+        d.onclick=()=>{selL=i; select(d);}
         leftCol.appendChild(d);
     });
 
-    rightSlots.forEach((txt, i) => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = txt;
-        d.onclick = () => selectRight(i, d);
+    rightSlots.forEach((t,i)=>{
+        const d=document.createElement("div");
+        d.className="card";
+        d.innerText=t;
+        d.onclick=()=>{selR=i; select(d);}
         rightCol.appendChild(d);
     });
 }
 
-function selectLeft(i, el) {
-    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    selLeftIndex = i;
+function select(el){
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
     el.classList.add("selected");
-    tryCheck();
+    if(selL!==null && selR!==null) check();
 }
 
-function selectRight(i, el) {
-    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    selRightIndex = i;
-    el.classList.add("selected");
-    tryCheck();
-}
+/* ===== KONTROL ===== */
+function check(){
+    const l = leftSlots[selL];
+    const r = rightSlots[selR];
 
-function tryCheck() {
-    if (selLeftIndex === null || selRightIndex === null) return;
+    const correct = units[mainUnit.value][subUnit.value]
+        .some(p=>p.left===l && p.right===r);
 
-    const leftText = leftSlots[selLeftIndex];
-    const rightText = rightSlots[selRightIndex];
+    const lCard = leftCol.children[selL];
+    const rCard = rightCol.children[selR];
 
-    const correct = pool.concat(
-        leftSlots.map((l, i) => ({ left: l, right: rightSlots[i] }))
-    ).some(p => p.left === leftText && p.right === rightText);
-
-    const lCard = leftCol.children[selLeftIndex];
-    const rCard = rightCol.children[selRightIndex];
-
-    if (units[mainUnit.value][subUnit.value]
-        .some(p => p.left === leftText && p.right === rightText)) {
-
+    if(correct){
         lCard.classList.add("correct");
         rCard.classList.add("correct");
+        correctCounter++;
 
-        setTimeout(() => {
-            if (pool.length > 0) {
-                const next = pool.shift();
-                leftSlots[selLeftIndex] = next.left;
-                rightSlots[selRightIndex] = next.right;
-            } else {
-                leftSlots.splice(selLeftIndex, 1);
-                rightSlots.splice(selRightIndex, 1);
+        setTimeout(()=>{
+            if(correctCounter % 2 === 0 && pool.length >= 2){
+                const a = pool.shift();
+                const b = pool.shift();
+                leftSlots[selL] = a.left;
+                rightSlots[selR] = b.right;
+                leftSlots[(selL+1)%PAGE_SIZE] = b.left;
+                rightSlots[(selR+1)%PAGE_SIZE] = a.right;
+            } else if(pool.length > 0){
+                const n = pool.shift();
+                leftSlots[selL] = n.left;
+                rightSlots[selR] = n.right;
             }
 
-            selLeftIndex = null;
-            selRightIndex = null;
+            selL=null; selR=null;
             render();
-        }, 200);
+        },200);
 
     } else {
         lCard.classList.add("wrong");
         rCard.classList.add("wrong");
-
-        setTimeout(() => {
+        setTimeout(()=>{
             lCard.classList.remove("wrong");
             rCard.classList.remove("wrong");
-            selLeftIndex = null;
-            selRightIndex = null;
-        }, 300);
+            selL=null; selR=null;
+        },300);
     }
 }
 
