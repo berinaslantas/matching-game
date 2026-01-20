@@ -113,31 +113,33 @@ const units = {
 };
 
 const PAGE_SIZE = 5;
+const FIXED_LEFT = 3; // soldaki sabit kart sayısı
 let pool = [];
 let activeLeft = [];
 let activeRight = [];
 let selLeftIndex = null;
 let selRightIndex = null;
 
-function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
-function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(a) { return a.sort(()=>Math.random()-0.5); }
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-function fillSelectors() {
-    mainUnit.innerHTML = "";
-    Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
+function fillSelectors(){
+    mainUnit.innerHTML="";
+    Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`);
     loadSub();
 }
-function loadSub() {
-    subUnit.innerHTML = "";
-    Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
+function loadSub(){
+    subUnit.innerHTML="";
+    Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
 }
 mainUnit.onchange = loadSub;
 
-function startGame() {
+function startGame(){
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
     activeLeft = [];
     activeRight = [];
-    for (let i=0;i<PAGE_SIZE;i++) {
+    // başta sabit soldaki kartlar
+    for(let i=0;i<FIXED_LEFT;i++){
         const p = pool.shift();
         if(!p) break;
         activeLeft.push(p);
@@ -146,16 +148,16 @@ function startGame() {
     render();
 }
 
-function render() {
-    leftCol.innerHTML = "";
-    rightCol.innerHTML = "";
+function render(){
+    leftCol.innerHTML="";
+    rightCol.innerHTML="";
 
     activeLeft.forEach((p,i)=>leftCol.appendChild(card(p? p.left : "", ()=>selectLeft(i), !!p)));
     activeRight.forEach((p,i)=>rightCol.appendChild(card(p? p.right : "", ()=>selectRight(i), !!p)));
 }
 
-function card(text, fn, visible) {
-    const d = document.createElement("div");
+function card(text, fn, visible){
+    const d=document.createElement("div");
     d.className="card";
     if(!visible) d.classList.add("empty");
     d.innerText=text;
@@ -174,21 +176,24 @@ function check(){
     if(L && R && L===R){
         activeLeft[selLeftIndex]=null;
         activeRight[selRightIndex]=null;
-        refillBatch();
+        // kısa gecikme sonrası refill
+        setTimeout(()=> refill(), 300);
     }
     selLeftIndex=selRightIndex=null;
     render();
 }
 
-/* ===== YENİ PAİRLERİ BATCH HALİNDE EKLE ===== */
-function refillBatch(){
+function refill(){
+    // soldaki boş slotları tespit et
     const emptyLeftIndices = activeLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-    const slotsToFill = Math.min(pool.length, emptyLeftIndices.length);
-    for(let i=0;i<slotsToFill;i++){
+    // sadece soldaki kart sayısı sabit 3 olacak şekilde ekleme
+    const needed = FIXED_LEFT - activeLeft.filter(v=>v!==null).length;
+    for(let i=0;i<needed && pool.length>0;i++){
         const p = pool.shift();
-        activeLeft[emptyLeftIndices[i]] = p;
+        const slot = emptyLeftIndices[i];
+        activeLeft[slot]=p;
 
-        // sağda rastgele boş slot
+        // sağda rastgele boş slotlara yerleştir
         const emptyRightIndices = activeRight.map((v,j)=>v===null?j:null).filter(v=>v!==null);
         if(emptyRightIndices.length) activeRight[rand(emptyRightIndices)] = p;
     }
