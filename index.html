@@ -23,7 +23,6 @@ select, button { margin: 6px; padding: 6px 12px; background: #161b22; color: #c9
 <select id="mainUnit"></select>
 <select id="subUnit"></select>
 <button onclick="startGame()">Başlat</button>
-<button onclick="startGeneralWrongs()">Genel Yanlışlar</button>
 
 <div class="game">
     <div class="column" id="leftCol"></div>
@@ -45,15 +44,7 @@ const units = {
             { left: "Kaşgarlı Mahmut", right: "Olgunluk Çağı" },
             { left: "İran Kaynakları", right: "Güzel İnsan" },
             { left: "Çin Kaynakları", right: "Miğfer" },
-            { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
-            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" },
-            { left: "Sakalar", right: "Balbal (mezar taşı) dikme geleneği" },
-            { left: "Sakalar", right: "Atı evcilleştirmiş dünyada ilk üzengi" },
-            { left: "Sakalar", right: "Günümüzde Rusya Federasyonunda Yakut Türkleri" },
-            { left: "Sakalar", right: "Bozkırın kuyumcuları" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Kurucusu Teoman" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Başkenti Ötüken. Kutsal bölge veya Toprak Ana" },
-            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete Vatan Sevgisi (Tunguzlara toprak vermeyip) ilk Türk hükümdar" }
+            { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" }
         ]
     },
     "Matematik": {
@@ -64,14 +55,13 @@ const units = {
     }
 };
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 4;
 let pool = [];
 let activeLeft = [];
 let activeRight = [];
 let selLeftIndex = null;
 let selRightIndex = null;
 
-/* ===== GENEL ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -87,107 +77,63 @@ function loadSub() {
 }
 mainUnit.onchange = loadSub;
 
-/* ===== OYUN BAŞLAT ===== */
+/* ===== OYUN ===== */
 function startGame() {
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
-    initBoard();
-}
-
-function startGeneralWrongs() {
-    const g = JSON.parse(localStorage.getItem("general_wrongs_v4") || "{}");
-    pool = shuffle(Object.values(g).map(o => o.pair));
-    initBoard();
-}
-
-function initBoard() {
     activeLeft = [];
     activeRight = [];
-
     for (let i = 0; i < PAGE_SIZE; i++) {
         const p = pool.shift();
         if (!p) break;
         activeLeft.push(p);
         activeRight.push(p);
     }
-
     render();
 }
 
-/* ===== RENDER ===== */
 function render() {
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
-
-    activeLeft.forEach((p, i) => {
-        if (!p) return leftCol.appendChild(empty());
-        leftCol.appendChild(card(p.left, () => selectLeft(i)));
-    });
-
-    activeRight.forEach((p, i) => {
-        if (!p) return rightCol.appendChild(empty());
-        rightCol.appendChild(card(p.right, () => selectRight(i)));
-    });
+    activeLeft.forEach((p, i) => leftCol.appendChild(card(p ? p.left : "", () => selectLeft(i), !!p)));
+    activeRight.forEach((p, i) => rightCol.appendChild(card(p ? p.right : "", () => selectRight(i), !!p)));
 }
 
-function card(text, fn) {
+function card(text, fn, visible) {
     const d = document.createElement("div");
     d.className = "card";
+    if (!visible) d.classList.add("empty");
     d.innerText = text;
     d.onclick = fn;
     return d;
 }
 
-function empty() {
-    const d = document.createElement("div");
-    d.className = "card empty";
-    return d;
-}
+function selectLeft(i) { clearSelect(); selLeftIndex=i; leftCol.children[i].classList.add("selected"); check(); }
+function selectRight(i) { clearSelect(); selRightIndex=i; rightCol.children[i].classList.add("selected"); check(); }
+function clearSelect() { document.querySelectorAll(".card").forEach(c => c.classList.remove("selected")); }
 
-/* ===== SEÇİM ===== */
-function selectLeft(i) {
-    clearSelect();
-    selLeftIndex = i;
-    leftCol.children[i].classList.add("selected");
-    check();
-}
-function selectRight(i) {
-    clearSelect();
-    selRightIndex = i;
-    rightCol.children[i].classList.add("selected");
-    check();
-}
-function clearSelect() {
-    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-}
-
-/* ===== KONTROL ===== */
 function check() {
     if (selLeftIndex === null || selRightIndex === null) return;
-
     const L = activeLeft[selLeftIndex];
     const R = activeRight[selRightIndex];
-
     if (L && R && L === R) {
         activeLeft[selLeftIndex] = null;
         activeRight[selRightIndex] = null;
         refill();
     }
-
     selLeftIndex = selRightIndex = null;
     render();
 }
 
-/* ===== SLOT DOLDUR ===== */
+/* ===== YENİ PAİRİ SAĞA RASTGELE YERLEŞTİR ===== */
 function refill() {
     if (!pool.length) return;
-
     const p = pool.shift();
-
+    // solda ilk boş yerine koy
     const emptyLeft = activeLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+    if (emptyLeft.length) activeLeft[emptyLeft[0]] = p;
+    // sağda rastgele boş slot
     const emptyRight = activeRight.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-
-    if (emptyLeft.length) activeLeft[emptyLeft[0]] = p; // solda ilk boş
-    if (emptyRight.length) activeRight[rand(emptyRight)] = p; // sağda rastgele boş slot
+    if (emptyRight.length) activeRight[rand(emptyRight)] = p;
 }
 
 fillSelectors();
