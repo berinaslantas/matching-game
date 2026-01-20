@@ -4,27 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eşleştirme Oyunu</title>
+
 <style>
-body { font-family:-apple-system,BlinkMacSystemFont,sans-serif; background:#0d1117; color:#c9d1d9; text-align:center; padding:20px; }
-button,select{margin:6px;padding:6px 12px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;}
-.game{display:flex;gap:12px;margin-top:12px;}
-.column{width:50%;}
-.card{background:#161b22;padding:14px;margin:8px 0;border-radius:10px;border:1px solid #30363d;cursor:pointer;transition:0.15s;}
-.card.selected{border-color:#58a6ff;}
-.card.correct{color:#2ea043;}
-.card.wrong{color:#ff7f0e;}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 20px;
+    text-align: center;
+}
+select, button {
+    margin: 6px;
+    padding: 6px 12px;
+    background: #161b22;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+.game {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+.column { width: 50%; }
+.card {
+    background: #161b22;
+    padding: 14px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+    cursor: pointer;
+    transition: 0.15s;
+    color: #c9d1d9;
+}
+.card.selected { border-color: #58a6ff; }
+.card.correct { color:#2ea043; }
+.card.wrong { color:#ff7f0e; }
 </style>
 </head>
 <body>
 
 <h2>🔗 Eşleştirme Oyunu</h2>
+
 <select id="mainUnit"></select>
 <select id="subUnit"></select>
 <button onclick="startGame()">Başlat</button>
+<button onclick="startGeneralWrongs()">Genel Yanlışlar</button>
 
 <div class="game">
-  <div class="column" id="leftCol"></div>
-  <div class="column" id="rightCol"></div>
+    <div class="column" id="leftCol"></div>
+    <div class="column" id="rightCol"></div>
 </div>
 
 <script>
@@ -39,11 +68,57 @@ const units = {
             { left: "Çin Kaynakları", right: "Miğfer" },
             { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
             { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
-        ]
-    },
-    "KARIŞIK": {
-        "karışık bilgiler": [
-            { left: "Maveraünnehir", right: "Seyhun ile Ceyhun arası" },
+        ],
+        "Orta Asya Kültür Merkezleri": [
+            { left: "Anav", right: "en eski (At ilk kez)" },
+            { left: "Afanesyova", right: "en eski Türk (Minusinsk)" },
+            { left: "Tagar", right: "en gelişmiş (Altaylılar)" },
+            { left: "Andronova", right: "Türk atalarının yaşadığı" },
+            { left: "Karasuk", right: "ilk demir işlendiği yer" },
+            { left: "Kelteminar", right: "yerleşik yaşam" }
+        ],
+        "Orta Asya Türkleri": [
+            { left: "İskitler (Sakalar)", right: "Bilinen ilk Türk boyu" },
+            { left: "İskitler (Sakalar)", right: "Alp Er Tunga -mezarı Özbekistan Buhara'da" },
+            { left: "İskitler (Sakalar)", right: "lk Türk kadın hükümdar Tomris Hatun" },
+            { left: "İskitler (Sakalar)", right: "Amazon (kadın savaşçılar)" },
+            { left: "İskitler (Sakalar)", right: "Balbal (mezar taşı) dikme geleneği" },
+            { left: "İskitler (Sakalar)", right: "Dünyada ilk kez atı evcilleştirmiş savaş için kullanmış ilk üzengi" },
+            { left: "İskitler (Sakalar)", right: "Samsun taraflarındaymış > Günümüzde Rusya Federasyonunda Yakut Türkleri" },
+            { left: "İskitler (Sakalar)", right: "Bozkırın kuyumcuları" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Kurucusu Teoman > ilk Şanyu ve Tanhu ünvanları" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Başkenti Ötüken. Kutsal bölge veya Toprak Ana" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete Vatan Sevgisi(Tunguzlara toprak vermeyip) ilk Türk hükümdar" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Mete orduda onlu sistem" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Türk tarihinin ilk yazılı antlaşması Çinlilerle yapılan Kuzey Şansi" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada Mete Türk boylarını(26) bir bayrak altında toplayan ilk devlet" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Orta Asyada ilk defa siyasi birlik -Mete Han" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "Türk tarihinde ilk eğitim faaliyetleri -metenin ıslıklı oku" },
+            { left: "Batı Hun hükümdarı Çiçi ", right: " istiklali feda etmeyi gülünç ve utanç verici bulmuş " },
+            { left: "Batı Hun hükümdarı Balamir", right: "Kavimler göçüne önderlik etmiş" },
+            { left: "Kavimler göçü sonuçları", right: "Roma ikiye ayrıldı - Önce Doğu sonra Batı  Roma yıkıldı " },
+            { left: "Kavimler göçü sonuçları", right: "Avrupa Hun Devleti kuruldu > Türk kültürü avrupada yayılma imkanı buldu" },
+            { left: "Kavimler göçü sonuçları", right: "Hristiyanlık yayıldı" },
+            { left: "Kavimler göçü sonuçları", right: "Kilise güçlendi skolastik düşünce ortaya çıktı > Din temelli, dogmatik, kayıtsız, şartsız" },
+            { left: "Kavimler göçü sonuçları", right: "İlk çağ kapandı orta çağ açıldı" },
+            { left: "Kavimler göçü sonuçları", right: "Feodalite rejimi ortaya çıktı" },
+            { left: "Kavimler göçü sonuçları", right: "Avrupa'nın bugünkü devletleri ortaya çıktı > Günümüz Avrupa uluslarının temeli > Avrupa etnik(ırk) yapısı değişti" },
+            { left: "Kavimler göçü sonuçları", right: "Avrupada siyasi birlik parçalandı" },
+        ],
+        "Avrupa Türkleri": [
+            { left: "Avrupa Hun Devleti", right: "Kurucusu Balamir -Macaristanda" },
+            { left: "Avrupa Hun Devleti en parlak dönem", right: "Atilla sonra oğulları > ilek,dengizek,irnek" },
+            { left: "Avrupa Hun Devleti", right: "Avrupa'da kurulan ilk Türk devleti > avrupadaki ilk Türk siyasi teşkilatı" },
+            { left: "Hem Orta Asya hem Avrupada Kurulanlar", right: "Büyük Hunlar ve Avarlar" },
+            { left: "Avrupa Hun Devleti", right: "Margos Barışı ve Anatolyus Ant." },
+            { left: "Avrupa Hun Devleti", right: "Galya ve İtalya seferleri (Papanın ricası)" },
+            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Papa I. Leon'un ricası" },
+            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Roma'nın Hristiyanlarca kutsal olması" },
+            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Batı Roma'nın gücünü kırdığına inanması" },
+            { left: "Atilla'nın Roma'yı almaktan vazgeçme nedenleri:", right: "Doğuda Sasani tehlikesinin bulunması" },
+            { left: "Attilla'nın ünvanları", right: "(Etzel (Nibelungen)(Hun burgant mücadelesi)" },
+            { left: "Attilla'nın ünvanları", right: "Cesur Kavimlerin Efendisi" },
+            { left: "Attilla'nın ünvanları", right: "Tanrının kamçısı" },
             { left: "Avarlar", right: "Kelime anlamı direnmek, engel olmak" },
             { left: "Avarlar", right: "Kurucusu Bayan Han" },
             { left: "Avarlar", right: "Töles savaşıyla I. Köktürkler tarafından yıkıldı" },
@@ -62,116 +137,285 @@ const units = {
             { left: "Bulgarlar", right: "kelime anlamı karışık - karışmak" },
             { left: "Bulgarlar (İtil)", right: "Almış Han zamanında Müslüman" },
             { left: "Bulgarlar (İtil)", right: "İbn-i Fablan Rihle (Yolculuk) eseri (konusu müslüman olunması)" },
-            { left: "Moyen Çur", right: "Uygur birliği" }
+            { left: "Bulgarlar (İtil)", right: "İslamiyeti kabul eden ilk Türk devleti" },
+            { left: "Bulgarlar (İtil)", right: "Avrupa'nın kuzeyinde kurulmuş" },
+            { left: "Bulgarlar (İtil)", right: "Avrupa'nın kuzeyinde veya Doğu Avrupa'da islam kültürünün ilk temsilcileri" },
+            { left: "Bulgarlar (İtil)", right: "İslamiyeti devletin resmi dini haline getiren ilk Türk devleti" },
+            { left: "Bulgarlar (Tuna)", right: "Barış Han zamanında Hristiyan " },
+            { left: "Bulgarlar (Tuna)", right: "Han unvanını bırakıp Çar unvanı -Simon" },
+            { left: "Sibirler", right: "yoldan sapan" },
+            { left: "Kıpçaklar (Kumanlar)", right: "Oğuzlarla -Dede Korkut Hikayeleri" },
+            { left: "Kıpçaklar (Kumanlar)", right: "Ruslarla mücadelede İgor destanı" },
+            { left: "Kıpçaklar (Kumanlar)", right: "Codex Cumanius (türkçe-farsça-latince) sözlük " },
+            { left: "Kıpçaklar (Kumanlar)", right: "Eyyubilerin ve memlüklülerin ordusunda ücretli askerlik" },
+            { left: "Kıpçaklar (Kumanlar)", right: "Bölgeye isimlerini vermişler Dest-i Kıpçak" },
+            { left: "Kıpçaklar (Kumanlar)", right: "sarı,sarımtrak,sarı saçlı, öfkeli" },
+            { left: "Kıpçaklar (Kumanlar)", right: "Altınorda Dev. Türkleşmesinde rol oynamış" },
+            { left: "Hazarlar", right: "Museviliği kabul eden ilk ve son türk devleti" },
+            { left: "Hazarlar, Türgişler", right: "Emevilerle (Hz. Osmanla Belencer savaşı) savaşıp maveraunnehirin islamlaşmasını önledi" },
+            { left: "Hazarlar", right: "Kürk yolunu kullanarak zenginleşmiş" },
+            { left: "Hazarlar", right: "Bek adında yöneticiler" },
+            { left: "Hazarlar", right: "Türk tarihinde ilk kez ordusuna ücretli asker almış" },
+            { left: "Hazarlar", right: "Yaşadıkları döneme Pax Hazaria" },
+            { left: "Hazarlar", right: "Polonya'da Karaim veya Karaçay Türkleri" },
+            { left: "Hazarlar", right: "Hakimler Heyeti" },
+            { left: "Hazarlar", right: "Müslümanların başlarına Hazz adlı yönetici" }
+        ],
+        "Orta Asya'da kalan TÜRK Boyları ve Devletleri": [
+            { left: "Köktürkler", right: "Hun'lar dan sonra Orta Asya'da siyasi birliği kuran 2. Devlet" },
+            { left: "Köktürkler", right: "Türk adıyla kurulan ilk Türk devleti" },
+            { left: "Köktürkler", right: "kurucusu İl Kağan ünvanlı Bumin Kağan" },
+            { left: "Köktürkler", right: "Bumin Kağan ülkeyi kardeşi İstemi Yabgu ile yönetmiş > ikili sistem" },
+            { left: "Köktürkler", right: "Merkezi Ötüken; toprak ana, kutsal bölge >Türk memleketlerinin yüreği" },
+            { left: "Köktürkler", right: "Altayların demircileri" },
+            { left: "Köktürkler", right: "Töles isyanı > Avarların göç etmesine sebep olmuş" },
+            { left: "Köktürkler", right: "Devlet en parlak zamanını Mukan Kağan" },
+            { left: "Köktürkler", right: "ipek yoluna hakim olabilmek için Sasaniler ile anlaşıp Akhunları Bizans ile anlaşıp Sasanileri mağlup etmiş" },
+            { left: "Köktürkler", right: "Orta Asya'dan Bizans'a ilk elçi gönderen devlet. Bizim elçi Maniac onlarınki Zemorkhas" },
+            { left: "Köktürkler", right: "Tapo Kağan zamanında Budizm ya da manihaizm" },
+            { left: "Köktürkler", right: "50 senelik Çin esareti döneminde önce Kürşad (Türklerin ilk milli istiklal ayaklanması) ardından Nişufu" },
+            { left: "Kutluklar II. Köktürk", right: "Kurucusu ilteriş(derleyen toplayan) ünvanlı Kutluk Kağan" },
+            { left: "Kutluklar II. Köktürk", right: "Devletin kuruluşunda önemli rol:Vezir Tonyukuk; Apa Tarkan ve Türklerin Bismarc'ı olarak anılır" },
+            { left: "Kutluklar II. Köktürk", right: "Vezir Tonyukuk ilk Türk tarihçisi ve yazar >> Orhun Abideleri> Kütigin, Bilge Kağan, Tonyukuk adına" },
+            { left: "Kutluklar II. Köktürk", right: "Türkçe Türk adı ilk kez Kutluk İlteriş Kağan anıtında geçer > Moğolistan Mongon vadisi" },
+            { left: "Uygurlar", right: "Kelime anlamı akraba, müttefik, uygar(medeni) ve Çin kaynaklarında şahin gibi dolaşan hücum eden" },
+            { left: "Uygurlar", right: "Kurucusu Kutluk Bilge Kül Kağan" },
+            { left: "Uygurlar", right: "Bögü Kağan zamanında maniheizm (Tibet seferi)" },
+            { left: "Uygurlar", right: "Türk tarihinde ilk kez yerleşik yaşama geçen devlet" },
+            { left: "Uygurlar", right: "Dünya tarihinde en çok Moğolların Türkleşmesinde etkili. Moğollar Uygurlara Benim Hocam" },
+            { left: "Uygurlar", right: "Yapmış oldukları sanat eserleri Talas savaşı sonucu batıya taşınan devlet" },
+            { left: "Uygurlar", right: "Et yemek yasaklandığı için savaşçılık duyguları gerilemiş" },
+            { left: "Uygurlar", right: "Başkent Ötüken'den Karabalgasun'a taşınmış" },
+            { left: "Uygurlar", right: "Sulama kanalları açtı tarım yaptı. Türklerin tanıdığı ilk bitki Yonca yetiştirdiği ilk bitki Darı" },
+            { left: "Uygurlar", right: "Balıg adlı şehirler inşa ettiler ayrıca tapınak ve saraylar yaptılar" },
+            { left: "Uygurlar", right: "Yaptıkları tapınak ve sarayla ilerde Selçuklu ve Osmanlı devletinde yapılan külliyelerin kaynağı" },
+            { left: "Uygurlar", right: "Resim sanatı gelişti" },
+            { left: "Uygurlar", right: "Hükümdarlarına Aytengri ve Kün unvanları" },
+            { left: "Uygurlar", right: "ilk defa kütüphane kurmuşlar" },
+            { left: "Uygurlar", right: "Türk tarihinde ilk kez örgün eğitim kurumları oluşturmuşlar" },
+            { left: "Uygurlar", right: "Çin'den harf hareketli matbaa getirilmiştir. İlk defa Türk tarihinde kütüphane kuruldu." },
+            { left: "Uygurlar", right: "Türk tarihinde ilk kez vakıf teşkilatı oluşturdular" },
+            { left: "Uygurlar", right: "Türk tarihinde orta oyununu bularak Türk tiyatrosunun temeli" },
+            { left: "Uygurlar", right: "Pandomim, şam ve operayı buldu" },
+            { left: "Uygurlar", right: "Faizle borç vererek Türk bankacılık sisteminin temellerini atmışlar" },
+            { left: "Uygurlar", right: "Türk tarihinde ilk kez kağıt para Çav kullandılar" },
+            { left: "Uygurlar", right: "Çin kaynaklarında Uygur tuzu veya Tatar tuzu olarak bilinen Çin'e ihraç edilen maden Nişadır" },
+            { left: "Uygurlar", right: "Töreleri yazılı hale getirdiler" },
+            { left: "Uygurlar", right: "akupunktur, göz tedavisi ve çiçek aşısı" },
+            { left: "Uygurlar", right: "önce Soğd sonra uygur alfabesi (milli)" },
+            { left: "Uygurlar", right: "duvar resmi (firesko) yapan kişi bedizci ve ilk defa minyatür sanatı gelişmiştir." },
+            { left: "Kırgızlar", right: "Dünyanın en uzun destanı olan Manas'ın sahipleridir" },
+            { left: "Kırgızlar", right: "Ölülerini yakan kavimdir." },
+            { left: "Kırgızlar", right: "Dünya tarihinde uluslararası yarışma düzenleyen ilk devlettir" },
+            { left: "Kırgızlar", right: "Adlarına ilk defa Orhun Abidelerinde rastlanmıştır." },
+            { left: "Kırgızlar", right: "Cengiz Han'a itaat eden ilk Türk Devleti" },
+            { left: "Kırgızlar", right: "Yenisey Kitabelerini oluşturmuşlar" },
+            { left: "Karluklar", right: "İslamiyeti kabul eden ilk Türk boyu" },
+            { left: "Karluklar", right: "Cengiz Han'a itaat eden ilk Türk boyu" },
+            { left: "Karluklar", right: "Karahanlılar devletinin kuruluşunda etkili olmuş" },
+            { left: "Karluklar", right: "Talas savaşı sırasında Abbasileri desteklemişler" },
+            { left: "Karluklar", right: "Hükümdarlarına atasagun denir" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" },
+            { left: "", right: "" }
+        ]
+    },
+    "KARIŞIK": {
+        "karışık bilgiler": [
+            { left: "Bulgarlar (İtil)", right: "Avrupa'nın kuzeyinde veya Doğu Avrupa'da islam kültürünün ilk temsilcileri" },
+            { left: "Karahanlılar", right: "Orta Asya'da islam kültürünün ilk temsilcileri" },
+            { left: "Asya Hun Devleti -Mete Han", right: "Orta Asya'da ilk Türk siyasi birliği" },
+            { left: "Mukan Kağan", right: "I. Göktürklerde Türk siyasi birliği sağlayan" },
+            { left: "Kapgan Kağan", right: "II. Göktürklerde Türk siyasi birliği sağlayan" },
+            { left: "Moyen Çur", right: "Uygurlarda Türk siyasi birliği sağlayan" },
+            { left: "Asya Hun Devleti (Büyük Hun)", right: "İlk ikili yönetim" },
+            { left: "Maveraünnehir", right: "Seyhun ile Ceyhun arasındaki bölge" },
+            { left: "Ötüken", right: "Orhun ile selengu arasındaki bölge" },
+            { left: " İslamiyet öncesi Anadoluya akın düzenleyenler", right: "İskitler, Avrupa Hun dev., Sibirler, Peçenekler, Oğuzlar" },
+            { left: "İslamiyet öncesinde", right: "Kuzeybatı Afrikaya Türk göçü yok (Fas,Tunus,Cezayir)" },
+            { left: "Orta Asyaya Türk adı", right: "İlk kez Çin kaynaklarında" },
+            { left: "Orta Asyaya Türkiye adı", right: "İlk kez Bizans kaynaklarında" },
+            { left: "İstanbulu kuşatan devletler", right: "PAT >> Peçenek, Avar, Tuna bulgarları" },
+            { left: "Peçenekler, Avarlar, Kıpçaklar", right: "Bizans'ta ücretli askerlik" },
+            { left: "Peçenekler, Uzlar, Kıpçaklar", right: "Malazgirt savaşı sırasında taraf değiştirmiş" },
+            { left: "Uygurlar", right: "Yaptıkları saray ve tapınak mimarisi > Selçuklu ve Osmanlıda külliyelerin kaynağı" }
         ]
     }
 };
 
 const PAGE_SIZE = 5;
-let pool=[], activePairs=[];
-let selL=null, selR=null;
-let solvedIndexes=[];
+let pool = [];
+let active = [];
+let selLeft = null;
+let selRight = null;
+let streak = 0;
 
-/* ===== SELECT ===== */
-const mainUnit = document.getElementById("mainUnit");
-const subUnit = document.getElementById("subUnit");
+/* ===== SESLER ===== */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-function fillSelectors(){
-    mainUnit.innerHTML="";
-    Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`);
+function playCorrect() {
+    streak++;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "triangle";
+    let freq = 800 * (1 + streak*0.2);
+    if (freq > 2000) freq = 2000;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+}
+
+function playWrong() {
+    streak = 0;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
+/* ===== GENEL YANLIŞLAR ===== */
+const STORAGE_KEY = "general_wrongs_v4";
+let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+function saveWrongs() { localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
+function markWrong(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) generalWrongs[k] = { wrong: 0, correct: 0, pair: p };
+    generalWrongs[k].wrong++;
+    saveWrongs();
+}
+function markCorrect(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) return;
+    generalWrongs[k].correct++;
+    if (generalWrongs[k].correct >= 2) delete generalWrongs[k];
+    saveWrongs();
+}
+
+/* ===== OYUN ===== */
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+
+function fillSelectors() {
+    mainUnit.innerHTML = "";
+    Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
     loadSub();
 }
-function loadSub(){
-    subUnit.innerHTML="";
-    Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
+
+function loadSub() {
+    subUnit.innerHTML = "";
+    Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
 }
+
 mainUnit.onchange = loadSub;
 
-/* ===== BAŞLAT ===== */
-function startGame(){
-    pool = [...units[mainUnit.value][subUnit.value]];
-    activePairs = pool.splice(0,PAGE_SIZE);
-    // SAĞ BLOK: ters sıra right
-    activePairs.forEach((p,i)=>{
-        p.slot = i; // slot index tut
-    });
-    solvedIndexes=[];
-    selL=selR=null;
+function startGame() {
+    streak = 0;
+    pool = shuffle([...units[mainUnit.value][subUnit.value]]);
+    active = pool.splice(0, PAGE_SIZE);
     render();
 }
 
-/* ===== RENDER ===== */
-function render(){
-    const leftCol = document.getElementById("leftCol");
-    const rightCol = document.getElementById("rightCol");
-    leftCol.innerHTML="";
-    rightCol.innerHTML="";
+function startGeneralWrongs() {
+    streak = 0;
+    pool = shuffle(Object.values(generalWrongs).map(o => o.pair));
+    active = pool.splice(0, PAGE_SIZE);
+    render();
+}
 
-    // SOL BLOK
-    activePairs.forEach((p,i)=>{
-        const d=document.createElement("div");
-        d.className="card"; d.innerText=p.left;
-        d.onclick=()=>{selL=i; clearSelected(); d.classList.add("selected"); selectCheck();};
-        if(p.correct) d.classList.add("correct");
+function render() {
+    leftCol.innerHTML = "";
+    rightCol.innerHTML = "";
+
+    active.forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.left;
+        d.onclick = () => { selLeft = p; select(d); };
         leftCol.appendChild(d);
     });
 
-    // SAĞ BLOK
-    const rightOrder = activePairs.map(p=>p.right).slice().reverse();
-    rightOrder.forEach((text,i)=>{
-        const d=document.createElement("div");
-        d.className="card"; d.innerText=text;
-        d.onclick=()=>{
-            selR=i;
-            clearSelected();
-            d.classList.add("selected");
-            selectCheck();
-        };
-        const origIndex = activePairs.length - 1 - i;
-        if(activePairs[origIndex].correct) d.classList.add("correct");
+    shuffle([...active]).forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.right;
+        d.onclick = () => { selRight = p; select(d); };
         rightCol.appendChild(d);
     });
 }
 
-function clearSelected(){
-    document.querySelectorAll(".card.selected").forEach(c=>c.classList.remove("selected"));
+function select(el) {
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
+    el.classList.add("selected");
+    if (selLeft && selRight) check();
 }
 
-/* ===== SEÇİM ===== */
-function selectCheck(){
-    if(selL===null || selR===null) return;
-    const leftPair = activePairs[selL];
-    const rightIndex = activePairs.length - 1 - selR; // ters sıra
-    const rightPair = activePairs[rightIndex];
+function check() {
+    // DOM kartları
+    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left && c.style.color !== "#2ea043");
+    const rCard = [...rightCol.children].find(c => c.innerText === selRight.right && c.style.color !== "#2ea043");
 
-    if(leftPair === rightPair){
-        leftPair.correct = true;
-        solvedIndexes.push(selL);
+    // sağdaki doğru cevaplar listesi
+    const correctRights = active.filter(p => p.left === selLeft.left).map(p => p.right);
 
-        if(solvedIndexes.length === 2 && pool.length >=2){
-            const newPairs = [pool.shift(), pool.shift()];
-            // SOL BLOK: boş slotlara sırayla
-            solvedIndexes.forEach((idx,i)=>activePairs[idx] = newPairs[i]);
-            solvedIndexes=[];
-        }
+    // doğru mu kontrol et
+    const correct = correctRights.includes(selRight.right);
+
+    if (correct) {
+        // sadece yazı rengini değiştir
+        lCard.style.color = "#2ea043";
+        rCard.style.color = "#2ea043";
+
+        playCorrect();
+        markCorrect(selLeft);
+
+        setTimeout(() => {
+            // sadece seçilen pair'i sil, aynı soldaki diğer doğru cevaplar kalır
+            const idx = active.findIndex(p => p.left === selLeft.left && p.right === selRight.right);
+            if (idx !== -1) active.splice(idx, 1);
+
+            // pool'dan PAGE_SIZE kadar ekle
+            while (active.length < PAGE_SIZE && pool.length > 0) {
+                active.push(pool.shift());
+            }
+
+            selLeft = selRight = null;
+            render();
+        }, 150);
+
     } else {
-        // yanlışsa kısa renk efekti
-        const leftCard = leftCol.children[selL];
-        const rightCard = rightCol.children[selR];
-        leftCard.classList.add("wrong");
-        rightCard.classList.add("wrong");
-        setTimeout(()=>{leftCard.classList.remove("wrong"); rightCard.classList.remove("wrong");},300);
-    }
+        lCard.style.color = "#ff7f0e";
+        rCard.style.color = "#ff7f0e";
 
-    selL=selR=null;
-    render();
+        playWrong();
+        markWrong(selLeft);
+
+        setTimeout(() => {
+            lCard.style.color = "#c9d1d9";
+            rCard.style.color = "#c9d1d9";
+            selLeft = selRight = null;
+        }, 300);
+    }
 }
 
 fillSelectors();
 </script>
 </body>
 </html>
-
-
-
-
