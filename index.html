@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eşleştirme Oyunu</title>
+
 <style>
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -48,6 +49,7 @@ select, button {
 <select id="mainUnit"></select>
 <select id="subUnit"></select>
 <button onclick="startGame()">Başlat</button>
+<button onclick="startGeneralWrongs()">Genel Yanlışlar</button>
 
 <div class="game">
     <div class="column" id="leftCol"></div>
@@ -132,90 +134,110 @@ const units = {
         ]
     }
 };
-
-const mainUnit = document.getElementById("mainUnit");
-const subUnit = document.getElementById("subUnit");
-const leftCol = document.getElementById("leftCol");
-const rightCol = document.getElementById("rightCol");
-
-let slotsLeft = [];
-let slotsRight = [];
+    
+const PAGE_SIZE = 5;
+let pool = [];
+let active = [];
 let selLeft = null;
 let selRight = null;
+let streak = 0;
+let rightOrder = []; // sağ blok için slot sırası
 
+/* ===== SESLER ===== */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playCorrect() { streak++; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type="triangle"; let freq=800*(1+streak*0.2); if(freq>2000) freq=2000; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.3,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.4); osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.4);}
+function playWrong() { streak=0; const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.type="sine"; osc.frequency.setValueAtTime(180,audioCtx.currentTime); gain.gain.setValueAtTime(0.2,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.5); osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.5);}
+
+/* ===== OYUN ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 
-/* ===== SELECTOR ===== */
 function fillSelectors() {
     mainUnit.innerHTML = "";
     Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
     loadSub();
 }
+
 function loadSub() {
     subUnit.innerHTML = "";
     Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
 }
+
 mainUnit.onchange = loadSub;
 
-/* ===== OYUN BAŞLAT ===== */
 function startGame() {
-    slotsLeft = [...units[mainUnit.value][subUnit.value]];
-    slotsRight = shuffle([...slotsLeft]); // sadece ilk başta karışık
+    streak = 0;
+    pool = shuffle([...units[mainUnit.value][subUnit.value]]);
+    active = pool.splice(0, PAGE_SIZE);
+    rightOrder = shuffle([...active]); // sağ blok karışık başlar
     render();
 }
 
-/* ===== RENDER ===== */
 function render() {
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
 
-    slotsLeft.forEach((p, i) => {
+    active.forEach((p,i) => {
         const d = document.createElement("div");
-        d.className = "card";
+        d.className="card";
         d.innerText = p.left;
-        d.onclick = () => { selLeft = i; select(); };
+        d.onclick = ()=>{ selLeft=p; select(d); };
         leftCol.appendChild(d);
     });
 
-    slotsRight.forEach((p, i) => {
+    rightOrder.forEach((p,i)=>{
         const d = document.createElement("div");
-        d.className = "card";
-        d.innerText = p.right;
-        d.onclick = () => { selRight = i; select(); };
+        d.className="card";
+        d.innerText=p.right;
+        d.onclick = ()=>{ selRight=p; select(d); };
         rightCol.appendChild(d);
     });
 }
 
-function select() {
-    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    if (selLeft !== null) leftCol.children[selLeft].classList.add("selected");
-    if (selRight !== null) rightCol.children[selRight].classList.add("selected");
-
-    if (selLeft !== null && selRight !== null) check();
+function select(el){
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
+    el.classList.add("selected");
+    if(selLeft && selRight) check();
 }
 
-/* ===== KONTROL ===== */
-function check() {
-    const leftPair = slotsLeft[selLeft];
-    const rightPair = slotsRight[selRight];
+function check(){
+    const correctRights = active.filter(p=>p.left===selLeft.left).map(p=>p.right);
+    const correct = correctRights.includes(selRight.right);
 
-    if (leftPair.right === rightPair.right) {
-        leftCol.children[selLeft].classList.add("correct");
-        rightCol.children[selRight].classList.add("correct");
-    } else {
-        leftCol.children[selLeft].classList.add("wrong");
-        rightCol.children[selRight].classList.add("wrong");
-        setTimeout(() => {
-            leftCol.children[selLeft].classList.remove("wrong");
-            rightCol.children[selRight].classList.remove("wrong");
-        }, 300);
+    const lCard = [...leftCol.children].find(c=>c.innerText===selLeft.left && c.style.color!="#2ea043");
+    const rCard = [...rightCol.children].find(c=>c.innerText===selRight.right && c.style.color!="#2ea043");
+
+    if(correct){
+        lCard.style.color="#2ea043";
+        rCard.style.color="#2ea043";
+        playCorrect();
+
+        // doğru pair sil
+        const idx = active.findIndex(p=>p.left===selLeft.left && p.right===selRight.right);
+        if(idx!==-1) active.splice(idx,1);
+        rightOrder.splice(rightOrder.findIndex(p=>p.left===selLeft.left && p.right===selRight.right),1);
+
+        // pool'dan yeni pair ekle
+        if(pool.length>0){
+            const newPair = pool.shift();
+            active.push(newPair);
+
+            // sol blok: eski eşleşen slotun yerine
+            const lSlot = [...leftCol.children].indexOf(lCard);
+            // sağ blok: eski eşleşen slotun yerine
+            rightOrder.splice([...rightCol.children].indexOf(rCard),0,newPair);
+        }
+
+        selLeft=selRight=null;
+        render();
+    }else{
+        lCard.style.color="#ff7f0e";
+        rCard.style.color="#ff7f0e";
+        playWrong();
+        setTimeout(()=>{ lCard.style.color="#c9d1d9"; rCard.style.color="#c9d1d9"; selLeft=selRight=null; },300);
     }
-
-    selLeft = selRight = null;
 }
 
 fillSelectors();
 </script>
 </body>
 </html>
-
