@@ -35,7 +35,6 @@ const subUnit = document.getElementById("subUnit");
 const leftCol = document.getElementById("leftCol");
 const rightCol = document.getElementById("rightCol");
 
-/* ===== VERİLER ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -113,7 +112,7 @@ const units = {
     }
 };
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 5;
 let pool = [];
 let activeLeft = [];
 let activeRight = [];
@@ -123,7 +122,6 @@ let selRightIndex = null;
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-/* ===== SELECTOR ===== */
 function fillSelectors() {
     mainUnit.innerHTML = "";
     Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
@@ -135,14 +133,13 @@ function loadSub() {
 }
 mainUnit.onchange = loadSub;
 
-/* ===== OYUN ===== */
 function startGame() {
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
     activeLeft = [];
     activeRight = [];
-    for (let i = 0; i < PAGE_SIZE; i++) {
+    for (let i=0;i<PAGE_SIZE;i++) {
         const p = pool.shift();
-        if (!p) break;
+        if(!p) break;
         activeLeft.push(p);
         activeRight.push(p);
     }
@@ -152,51 +149,52 @@ function startGame() {
 function render() {
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
-    activeLeft.forEach((p, i) => leftCol.appendChild(card(p ? p.left : "", () => selectLeft(i), !!p)));
-    activeRight.forEach((p, i) => rightCol.appendChild(card(p ? p.right : "", () => selectRight(i), !!p)));
+
+    activeLeft.forEach((p,i)=>leftCol.appendChild(card(p? p.left : "", ()=>selectLeft(i), !!p)));
+    activeRight.forEach((p,i)=>rightCol.appendChild(card(p? p.right : "", ()=>selectRight(i), !!p)));
 }
 
 function card(text, fn, visible) {
     const d = document.createElement("div");
-    d.className = "card";
-    if (!visible) d.classList.add("empty");
-    d.innerText = text;
-    d.onclick = fn;
+    d.className="card";
+    if(!visible) d.classList.add("empty");
+    d.innerText=text;
+    d.onclick=fn;
     return d;
 }
 
-function selectLeft(i) { clearSelect(); selLeftIndex=i; leftCol.children[i].classList.add("selected"); check(); }
-function selectRight(i) { clearSelect(); selRightIndex=i; rightCol.children[i].classList.add("selected"); check(); }
-function clearSelect() { document.querySelectorAll(".card").forEach(c => c.classList.remove("selected")); }
+function selectLeft(i){ clearSelect(); selLeftIndex=i; leftCol.children[i].classList.add("selected"); check(); }
+function selectRight(i){ clearSelect(); selRightIndex=i; rightCol.children[i].classList.add("selected"); check(); }
+function clearSelect(){ document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected")); }
 
-function check() {
-    if (selLeftIndex === null || selRightIndex === null) return;
-    const L = activeLeft[selLeftIndex];
-    const R = activeRight[selRightIndex];
-    if (L && R && L === R) {
-        activeLeft[selLeftIndex] = null;
-        activeRight[selRightIndex] = null;
-        refill();
+function check(){
+    if(selLeftIndex===null || selRightIndex===null) return;
+    const L=activeLeft[selLeftIndex];
+    const R=activeRight[selRightIndex];
+    if(L && R && L===R){
+        activeLeft[selLeftIndex]=null;
+        activeRight[selRightIndex]=null;
+        refillBatch();
     }
-    selLeftIndex = selRightIndex = null;
+    selLeftIndex=selRightIndex=null;
     render();
 }
 
-/* ===== YENİ PAİRİ SAĞA RASTGELE YERLEŞTİR ===== */
-function refill() {
-    if (!pool.length) return;
-    const p = pool.shift();
-    // solda ilk boş yerine koy
-    const emptyLeft = activeLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-    if (emptyLeft.length) activeLeft[emptyLeft[0]] = p;
-    // sağda rastgele boş slot
-    const emptyRight = activeRight.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-    if (emptyRight.length) activeRight[rand(emptyRight)] = p;
+/* ===== YENİ PAİRLERİ BATCH HALİNDE EKLE ===== */
+function refillBatch(){
+    const emptyLeftIndices = activeLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+    const slotsToFill = Math.min(pool.length, emptyLeftIndices.length);
+    for(let i=0;i<slotsToFill;i++){
+        const p = pool.shift();
+        activeLeft[emptyLeftIndices[i]] = p;
+
+        // sağda rastgele boş slot
+        const emptyRightIndices = activeRight.map((v,j)=>v===null?j:null).filter(v=>v!==null);
+        if(emptyRightIndices.length) activeRight[rand(emptyRightIndices)] = p;
+    }
 }
 
 fillSelectors();
 </script>
 </body>
 </html>
-
-
