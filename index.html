@@ -88,13 +88,14 @@ const units = {
     }
 };
 
+<script>
+/* ===== VERİLER ===== */
 const PAGE_SIZE = 5;
 let pool = [];
 let activeLeft = [];
 let activeRight = [];
 let selLeftIndex = null;
 let selRightIndex = null;
-let streak = 0;
 
 /* ===== GENEL ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
@@ -114,13 +115,13 @@ mainUnit.onchange = loadSub;
 
 /* ===== OYUN BAŞLAT ===== */
 function startGame() {
-    streak = 0;
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
     initBoard();
 }
+
 function startGeneralWrongs() {
-    streak = 0;
-    pool = shuffle(Object.values(JSON.parse(localStorage.getItem("general_wrongs_v4") || "{}")).map(o => o.pair));
+    const g = JSON.parse(localStorage.getItem("general_wrongs_v4") || "{}");
+    pool = shuffle(Object.values(g).map(o => o.pair));
     initBoard();
 }
 
@@ -134,6 +135,7 @@ function initBoard() {
         activeLeft.push(p);
         activeRight.push(p);
     }
+
     shuffle(activeRight);
     render();
 }
@@ -161,6 +163,7 @@ function card(text, fn) {
     d.onclick = fn;
     return d;
 }
+
 function empty() {
     const d = document.createElement("div");
     d.className = "card empty";
@@ -191,35 +194,32 @@ function check() {
     const L = activeLeft[selLeftIndex];
     const R = activeRight[selRightIndex];
 
-    if (L && R && L.left === L.left && L.right === R.right) {
+    // ✅ DOĞRU KONTROL
+    if (L && R && L === R) {
         activeLeft[selLeftIndex] = null;
         activeRight[selRightIndex] = null;
-
         refill();
-        selLeftIndex = selRightIndex = null;
-        render();
-    } else {
-        selLeftIndex = selRightIndex = null;
-        clearSelect();
     }
+
+    selLeftIndex = selRightIndex = null;
+    render();
 }
 
 /* ===== SLOT DOLDUR ===== */
 function refill() {
-    if (pool.length === 0) return;
+    if (!pool.length) return;
+
+    const p = pool.shift();
 
     const emptyLeft = activeLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
     const emptyRight = activeRight.map((v,i)=>v===null?i:null).filter(v=>v!==null);
 
-    if (emptyLeft.length && pool.length) {
-        activeLeft[rand(emptyLeft)] = pool[0];
-    }
-    if (emptyRight.length && pool.length) {
-        activeRight[rand(emptyRight)] = pool.shift();
-    }
+    if (emptyLeft.length) activeLeft[rand(emptyLeft)] = p;
+    if (emptyRight.length) activeRight[rand(emptyRight)] = p;
 }
 
 fillSelectors();
 </script>
 </body>
 </html>
+
