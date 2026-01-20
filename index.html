@@ -134,19 +134,62 @@ const units = {
         ]
     }
 };
-    
+
 const PAGE_SIZE = 5;
 let pool = [];
 let active = [];
 let selLeft = null;
 let selRight = null;
 let streak = 0;
-let rightOrder = []; // sağ blok için slot sırası
 
 /* ===== SESLER ===== */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playCorrect() { streak++; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type="triangle"; let freq=800*(1+streak*0.2); if(freq>2000) freq=2000; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.3,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.4); osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.4);}
-function playWrong() { streak=0; const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.type="sine"; osc.frequency.setValueAtTime(180,audioCtx.currentTime); gain.gain.setValueAtTime(0.2,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.5); osc.connect(gain).connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+0.5);}
+
+function playCorrect() {
+    streak++;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "triangle";
+    let freq = 800 * (1 + streak*0.2);
+    if (freq > 2000) freq = 2000;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+}
+
+function playWrong() {
+    streak = 0;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
+/* ===== GENEL YANLIŞLAR ===== */
+const STORAGE_KEY = "general_wrongs_v4";
+let generalWrongs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+function saveWrongs() { localStorage.setItem(STORAGE_KEY, JSON.stringify(generalWrongs)); }
+function markWrong(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) generalWrongs[k] = { wrong: 0, correct: 0, pair: p };
+    generalWrongs[k].wrong++;
+    saveWrongs();
+}
+function markCorrect(p) {
+    const k = p.left + "||" + p.right;
+    if (!generalWrongs[k]) return;
+    generalWrongs[k].correct++;
+    if (generalWrongs[k].correct >= 2) delete generalWrongs[k];
+    saveWrongs();
+}
 
 /* ===== OYUN ===== */
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
@@ -168,7 +211,13 @@ function startGame() {
     streak = 0;
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
     active = pool.splice(0, PAGE_SIZE);
-    rightOrder = shuffle([...active]); // sağ blok karışık başlar
+    render();
+}
+
+function startGeneralWrongs() {
+    streak = 0;
+    pool = shuffle(Object.values(generalWrongs).map(o => o.pair));
+    active = pool.splice(0, PAGE_SIZE);
     render();
 }
 
@@ -176,64 +225,74 @@ function render() {
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
 
-    active.forEach((p,i) => {
+    active.forEach(p => {
         const d = document.createElement("div");
-        d.className="card";
+        d.className = "card";
         d.innerText = p.left;
-        d.onclick = ()=>{ selLeft=p; select(d); };
+        d.onclick = () => { selLeft = p; select(d); };
         leftCol.appendChild(d);
     });
 
-    rightOrder.forEach((p,i)=>{
+    shuffle([...active]).forEach(p => {
         const d = document.createElement("div");
-        d.className="card";
-        d.innerText=p.right;
-        d.onclick = ()=>{ selRight=p; select(d); };
+        d.className = "card";
+        d.innerText = p.right;
+        d.onclick = () => { selRight = p; select(d); };
         rightCol.appendChild(d);
     });
 }
 
-function select(el){
-    document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
+function select(el) {
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
     el.classList.add("selected");
-    if(selLeft && selRight) check();
+    if (selLeft && selRight) check();
 }
 
-function check(){
-    const correctRights = active.filter(p=>p.left===selLeft.left).map(p=>p.right);
+function check() {
+    // DOM kartları
+    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left && c.style.color !== "#2ea043");
+    const rCard = [...rightCol.children].find(c => c.innerText === selRight.right && c.style.color !== "#2ea043");
+
+    // sağdaki doğru cevaplar listesi
+    const correctRights = active.filter(p => p.left === selLeft.left).map(p => p.right);
+
+    // doğru mu kontrol et
     const correct = correctRights.includes(selRight.right);
 
-    const lCard = [...leftCol.children].find(c=>c.innerText===selLeft.left && c.style.color!="#2ea043");
-    const rCard = [...rightCol.children].find(c=>c.innerText===selRight.right && c.style.color!="#2ea043");
+    if (correct) {
+        // sadece yazı rengini değiştir
+        lCard.style.color = "#2ea043";
+        rCard.style.color = "#2ea043";
 
-    if(correct){
-        lCard.style.color="#2ea043";
-        rCard.style.color="#2ea043";
         playCorrect();
+        markCorrect(selLeft);
 
-        // doğru pair sil
-        const idx = active.findIndex(p=>p.left===selLeft.left && p.right===selRight.right);
-        if(idx!==-1) active.splice(idx,1);
-        rightOrder.splice(rightOrder.findIndex(p=>p.left===selLeft.left && p.right===selRight.right),1);
+        setTimeout(() => {
+            // sadece seçilen pair'i sil, aynı soldaki diğer doğru cevaplar kalır
+            const idx = active.findIndex(p => p.left === selLeft.left && p.right === selRight.right);
+            if (idx !== -1) active.splice(idx, 1);
 
-        // pool'dan yeni pair ekle
-        if(pool.length>0){
-            const newPair = pool.shift();
-            active.push(newPair);
+            // pool'dan PAGE_SIZE kadar ekle
+            while (active.length < PAGE_SIZE && pool.length > 0) {
+                active.push(pool.shift());
+            }
 
-            // sol blok: eski eşleşen slotun yerine
-            const lSlot = [...leftCol.children].indexOf(lCard);
-            // sağ blok: eski eşleşen slotun yerine
-            rightOrder.splice([...rightCol.children].indexOf(rCard),0,newPair);
-        }
+            selLeft = selRight = null;
+            render();
+        }, 150);
 
-        selLeft=selRight=null;
-        render();
-    }else{
-        lCard.style.color="#ff7f0e";
-        rCard.style.color="#ff7f0e";
+    } else {
+        lCard.style.color = "#ff7f0e";
+        rCard.style.color = "#ff7f0e";
+
         playWrong();
-        setTimeout(()=>{ lCard.style.color="#c9d1d9"; rCard.style.color="#c9d1d9"; selLeft=selRight=null; },300);
+        markWrong(selLeft);
+
+        setTimeout(() => {
+            lCard.style.color = "#c9d1d9";
+            rCard.style.color = "#c9d1d9";
+            selLeft = selRight = null;
+        }, 300);
     }
 }
 
