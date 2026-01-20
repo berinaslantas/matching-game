@@ -2,59 +2,26 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eşleştirme Oyunu</title>
-
+<title>Eşleştirme</title>
 <style>
-body {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #0d1117;
-    color: #c9d1d9;
-    padding: 20px;
-    text-align: center;
-}
-select, button {
-    margin: 6px;
-    padding: 6px 12px;
-    background: #161b22;
-    color: #c9d1d9;
-    border: 1px solid #30363d;
-    border-radius: 6px;
-}
-.game {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-}
-.column { width: 50%; }
-.card {
-    background: #161b22;
-    padding: 14px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: 1px solid #30363d;
-    cursor: pointer;
-}
-.card.selected { border-color: #58a6ff; }
-.card.correct { color:#2ea043; }
-.card.wrong { color:#ff7f0e; }
+body { background:#0d1117; color:#c9d1d9; font-family:sans-serif; text-align:center }
+.game{display:flex;gap:10px;margin-top:20px}
+.column{width:50%}
+.card{background:#161b22;border:1px solid #30363d;padding:12px;margin:6px;border-radius:8px;cursor:pointer}
+.card.selected{border-color:#58a6ff}
+.card.correct{color:#2ea043}
 </style>
 </head>
 <body>
 
-<h2>🔗 Eşleştirme Oyunu</h2>
-
-<select id="mainUnit"></select>
-<select id="subUnit"></select>
-<button onclick="startGame()">Başlat</button>
+<button onclick="start()">Başlat</button>
 
 <div class="game">
-    <div class="column" id="leftCol"></div>
-    <div class="column" id="rightCol"></div>
+  <div class="column" id="left"></div>
+  <div class="column" id="right"></div>
 </div>
 
 <script>
-/* ===== VERİ ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -93,112 +60,54 @@ const units = {
     }
 };
 
-const PAGE_SIZE = 4;
-let pool = [];
-let leftSlots = [];
-let rightSlots = [];
-let selL = null;
-let selR = null;
-let correctCounter = 0;
+let pool=[], leftSlots=[], rightSlots=[];
+let solvedIndexes=[], selL=null, selR=null;
 
-function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
-
-/* ===== SELECT ===== */
-function fillSelectors(){
-    mainUnit.innerHTML = "";
-    Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`);
-    loadSub();
-}
-function loadSub(){
-    subUnit.innerHTML = "";
-    Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
-}
-mainUnit.onchange = loadSub;
-
-/* ===== BAŞLAT ===== */
-function startGame(){
-    pool = shuffle([...units[mainUnit.value][subUnit.value]]);
-    const first = pool.splice(0, PAGE_SIZE);
-    leftSlots = first.map(p=>p.left);
-    rightSlots = shuffle(first.map(p=>p.right));
-    correctCounter = 0;
-    render();
+function start(){
+ pool=[...data];
+ const first=pool.splice(0,5);
+ leftSlots=first.map(p=>p.left);
+ rightSlots=[...leftSlots].reverse();
+ render();
 }
 
-/* ===== RENDER ===== */
 function render(){
-    leftCol.innerHTML="";
-    rightCol.innerHTML="";
-
-    leftSlots.forEach((t,i)=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerText=t;
-        d.onclick=()=>{selL=i; select(d);}
-        leftCol.appendChild(d);
-    });
-
-    rightSlots.forEach((t,i)=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerText=t;
-        d.onclick=()=>{selR=i; select(d);}
-        rightCol.appendChild(d);
-    });
+ left.innerHTML=""; right.innerHTML="";
+ leftSlots.forEach((t,i)=>{
+  const d=document.createElement("div");
+  d.className="card"; d.innerText=t;
+  d.onclick=()=>{selL=i; d.classList.add("selected"); check()};
+  left.appendChild(d);
+ });
+ rightSlots.forEach((t,i)=>{
+  const d=document.createElement("div");
+  d.className="card"; d.innerText=t;
+  d.onclick=()=>{selR=i; d.classList.add("selected"); check()};
+  right.appendChild(d);
+ });
 }
 
-function select(el){
-    document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
-    el.classList.add("selected");
-    if(selL!==null && selR!==null) check();
-}
-
-/* ===== KONTROL ===== */
 function check(){
-    const l = leftSlots[selL];
-    const r = rightSlots[selR];
-
-    const correct = units[mainUnit.value][subUnit.value]
-        .some(p=>p.left===l && p.right===r);
-
-    const lCard = leftCol.children[selL];
-    const rCard = rightCol.children[selR];
-
-    if(correct){
-        lCard.classList.add("correct");
-        rCard.classList.add("correct");
-        correctCounter++;
-
-        setTimeout(()=>{
-            if(correctCounter % 2 === 0 && pool.length >= 2){
-                const a = pool.shift();
-                const b = pool.shift();
-                leftSlots[selL] = a.left;
-                rightSlots[selR] = b.right;
-                leftSlots[(selL+1)%PAGE_SIZE] = b.left;
-                rightSlots[(selR+1)%PAGE_SIZE] = a.right;
-            } else if(pool.length > 0){
-                const n = pool.shift();
-                leftSlots[selL] = n.left;
-                rightSlots[selR] = n.right;
-            }
-
-            selL=null; selR=null;
-            render();
-        },200);
-
-    } else {
-        lCard.classList.add("wrong");
-        rCard.classList.add("wrong");
-        setTimeout(()=>{
-            lCard.classList.remove("wrong");
-            rCard.classList.remove("wrong");
-            selL=null; selR=null;
-        },300);
-    }
+ if(selL===null||selR===null) return;
+ if(leftSlots[selL]===rightSlots[selR]){
+   solvedIndexes.push(selL);
+   if(solvedIndexes.length===2){
+     const newPairs=[pool.shift(),pool.shift()];
+     // SOL
+     solvedIndexes.forEach((idx,i)=>{
+       leftSlots[idx]=newPairs[i].left;
+     });
+     // SAĞ ÇAPRAZ
+     solvedIndexes.forEach((idx,i)=>{
+       const target=solvedIndexes[(i+1)%solvedIndexes.length];
+       rightSlots[target]=newPairs[i].right;
+     });
+     solvedIndexes=[];
+   }
+ }
+ selL=selR=null;
+ render();
 }
-
-fillSelectors();
 </script>
 </body>
 </html>
