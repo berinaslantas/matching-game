@@ -242,10 +242,12 @@ function render() {
     });
 }
 
-function select(el) {
+function select() {
     document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    el.classList.add("selected");
-    if (selLeft && selRight) check();
+    if (selLeft !== null) leftCol.children[selLeft].classList.add("selected");
+    if (selRight !== null) rightCol.children[selRight].classList.add("selected");
+
+    if (selLeft !== null && selRight !== null) check();
 }
 
 function check() {
@@ -255,48 +257,21 @@ function check() {
     if (leftPair.right === rightPair.right) {
         leftCol.children[selLeft].classList.add("correct");
         rightCol.children[selRight].classList.add("correct");
-
-        // eski eşleşmeyi çıkar
-        slotsLeft[selLeft] = null;
-        slotsRight[selRight] = null;
-
-        // boş slotları al
-        const emptyLefts = slotsLeft.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-        const emptyRights = slotsRight.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-
-        // pool'dan yeni kartları ekle
-        if (pool.length > 0 && emptyLefts.length > 0) {
-            const newLeft1 = pool.shift();
-            const newLeft2 = pool.length>0? pool.shift():null;
-
-            // çapraz doldurma
-            slotsLeft[emptyLefts[0]] = newLeft1;
-            if (newLeft2 && emptyLefts.length>1) slotsLeft[emptyLefts[1]] = newLeft2;
-
-            // sağda çapraz
-            if (newLeft2 && emptyRights.length>1) {
-                slotsRight[emptyRights[0]] = newLeft2;
-                slotsRight[emptyRights[1]] = newLeft1;
-            } else {
-                slotsRight[emptyRights[0]] = newLeft1;
-            }
-        }
-
-        selLeft = selRight = null;
-        render();
     } else {
         leftCol.children[selLeft].classList.add("wrong");
         rightCol.children[selRight].classList.add("wrong");
-        setTimeout(()=>{
+        setTimeout(() => {
             leftCol.children[selLeft].classList.remove("wrong");
             rightCol.children[selRight].classList.remove("wrong");
-            selLeft = selRight = null;
         }, 300);
     }
+
+    selLeft = selRight = null;
 }
 
 fillSelectors();
 </script>
 </body>
 </html>
+
 
