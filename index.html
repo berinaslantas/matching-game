@@ -2,26 +2,33 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Eşleştirme</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eşleştirme Oyunu</title>
 <style>
-body { background:#0d1117; color:#c9d1d9; font-family:sans-serif; text-align:center }
-.game{display:flex;gap:10px;margin-top:20px}
-.column{width:50%}
-.card{background:#161b22;border:1px solid #30363d;padding:12px;margin:6px;border-radius:8px;cursor:pointer}
-.card.selected{border-color:#58a6ff}
-.card.correct{color:#2ea043}
+body { font-family:-apple-system,BlinkMacSystemFont,sans-serif; background:#0d1117; color:#c9d1d9; text-align:center; padding:20px; }
+button,select{margin:6px;padding:6px 12px;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;}
+.game{display:flex;gap:12px;margin-top:12px;}
+.column{width:50%;}
+.card{background:#161b22;padding:14px;margin:8px 0;border-radius:10px;border:1px solid #30363d;cursor:pointer;transition:0.15s;}
+.card.selected{border-color:#58a6ff;}
+.card.correct{color:#2ea043;}
+.card.wrong{color:#ff7f0e;}
 </style>
 </head>
 <body>
 
-<button onclick="start()">Başlat</button>
+<h2>🔗 Eşleştirme Oyunu</h2>
+<select id="mainUnit"></select>
+<select id="subUnit"></select>
+<button onclick="startGame()">Başlat</button>
 
 <div class="game">
-  <div class="column" id="left"></div>
-  <div class="column" id="right"></div>
+  <div class="column" id="leftCol"></div>
+  <div class="column" id="rightCol"></div>
 </div>
 
 <script>
+/* ===== VERİLER ===== */
 const units = {
     "İslamiyet Öncesi Türk Tarihi": {
         "Türk adının anlamları": [
@@ -60,56 +67,92 @@ const units = {
     }
 };
 
+const PAGE_SIZE = 5;
 let pool=[], leftSlots=[], rightSlots=[];
-let solvedIndexes=[], selL=null, selR=null;
+let selL=null, selR=null;
+let solvedIndexes=[];
 
-function start(){
- pool=[...data];
- const first=pool.splice(0,5);
- leftSlots=first.map(p=>p.left);
- rightSlots=[...leftSlots].reverse();
- render();
+/* ===== SELECT ===== */
+const mainUnit = document.getElementById("mainUnit");
+const subUnit = document.getElementById("subUnit");
+
+function fillSelectors(){
+    mainUnit.innerHTML="";
+    Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`);
+    loadSub();
+}
+function loadSub(){
+    subUnit.innerHTML="";
+    Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
+}
+mainUnit.onchange = loadSub;
+
+/* ===== BAŞLAT ===== */
+function startGame(){
+    pool = [...units[mainUnit.value][subUnit.value]];
+    const first = pool.splice(0,PAGE_SIZE);
+    leftSlots = first.map(p=>p.left);
+    rightSlots = [...leftSlots].reverse(); // başlangıçta sağ blok ters sırada
+    solvedIndexes = [];
+    selL=selR=null;
+    render();
 }
 
+/* ===== RENDER ===== */
 function render(){
- left.innerHTML=""; right.innerHTML="";
- leftSlots.forEach((t,i)=>{
-  const d=document.createElement("div");
-  d.className="card"; d.innerText=t;
-  d.onclick=()=>{selL=i; d.classList.add("selected"); check()};
-  left.appendChild(d);
- });
- rightSlots.forEach((t,i)=>{
-  const d=document.createElement("div");
-  d.className="card"; d.innerText=t;
-  d.onclick=()=>{selR=i; d.classList.add("selected"); check()};
-  right.appendChild(d);
- });
+    leftCol.innerHTML="";
+    rightCol.innerHTML="";
+    leftSlots.forEach((t,i)=>{
+        const d=document.createElement("div");
+        d.className="card"; d.innerText=t;
+        d.onclick=()=>{selL=i; d.classList.add("selected"); selectCheck();};
+        leftCol.appendChild(d);
+    });
+    rightSlots.forEach((t,i)=>{
+        const d=document.createElement("div");
+        d.className="card"; d.innerText=t;
+        d.onclick=()=>{selR=i; d.classList.add("selected"); selectCheck();};
+        rightCol.appendChild(d);
+    });
 }
 
-function check(){
- if(selL===null||selR===null) return;
- if(leftSlots[selL]===rightSlots[selR]){
-   solvedIndexes.push(selL);
-   if(solvedIndexes.length===2){
-     const newPairs=[pool.shift(),pool.shift()];
-     // SOL
-     solvedIndexes.forEach((idx,i)=>{
-       leftSlots[idx]=newPairs[i].left;
-     });
-     // SAĞ ÇAPRAZ
-     solvedIndexes.forEach((idx,i)=>{
-       const target=solvedIndexes[(i+1)%solvedIndexes.length];
-       rightSlots[target]=newPairs[i].right;
-     });
-     solvedIndexes=[];
-   }
- }
- selL=selR=null;
- render();
+/* ===== SEÇİM ===== */
+function selectCheck(){
+    if(selL===null || selR===null) return;
+    const l = leftSlots[selL];
+    const r = rightSlots[selR];
+    const correct = units[mainUnit.value][subUnit.value].some(p=>p.left===l && p.right===r);
+    const lCard = leftCol.children[selL];
+    const rCard = rightCol.children[selR];
+    if(correct){
+        lCard.classList.add("correct");
+        rCard.classList.add("correct");
+        solvedIndexes.push(selL);
+        if(solvedIndexes.length===2 && pool.length>=2){
+            // iki yeni soru al
+            const newPairs=[pool.shift(), pool.shift()];
+            // sol slotlara sırayla ekle
+            solvedIndexes.forEach((idx,i)=>leftSlots[idx]=newPairs[i].left);
+            // sağ slotlar çapraz: ilk solved indexe ikinci yeni sorunun cevabı, ikinci solved indexe birinci
+            solvedIndexes.forEach((idx,i)=>{
+                const target=solvedIndexes[(i+1)%solvedIndexes.length];
+                rightSlots[target]=newPairs[i].right;
+            });
+            solvedIndexes=[];
+        }
+    } else {
+        lCard.classList.add("wrong");
+        rCard.classList.add("wrong");
+        setTimeout(()=>{lCard.classList.remove("wrong"); rCard.classList.remove("wrong");},300);
+    }
+    selL=selR=null;
+    render();
 }
+
+fillSelectors();
 </script>
 </body>
 </html>
+
 
 
