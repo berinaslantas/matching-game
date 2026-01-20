@@ -35,7 +35,6 @@ select, button {
     border: 1px solid #30363d;
     cursor: pointer;
     transition: 0.15s;
-    color: #c9d1d9;
 }
 .card.selected { border-color: #58a6ff; }
 .card.correct { color:#2ea043; }
@@ -57,131 +56,138 @@ select, button {
 </div>
 
 <script>
+/* ================= VERİLER ================= */
+const units = {
+    "İslamiyet Öncesi Türk Tarihi": {
+        "Türk adının anlamları": [
+            { left: "Wambery", right: "Türemek" },
+            { left: "Doerfer", right: "Devlete bağlı halk" },
+            { left: "Kaşgarlı Mahmut", right: "Olgunluk Çağı" },
+            { left: "İran Kaynakları", right: "Güzel İnsan" },
+            { left: "Çin Kaynakları", right: "Miğfer" },
+            { left: "Ziya Gökalp", right: "Kanun ve nizam sahibi" },
+            { left: "Diğer", right: "Güçlü, kuvvetli, terk edilmiş" }
+        ]
+    },
+    "KARIŞIK": {
+        "karışık bilgiler": [
+            { left: "Maveraünnehir", right: "Seyhun ile Ceyhun arası" },
+            { left: "Ötüken", right: "Orhun ile Selenge arası" },
+            { left: "Mete Han", right: "İlk Türk siyasi birliği" },
+            { left: "Kapgan Kağan", right: "II. Göktürk birliği" },
+            { left: "Moyen Çur", right: "Uygur birliği" }
+        ]
+    }
+};
+
+/* ================= OYUN ================= */
 const PAGE_SIZE = 5;
 let pool = [];
 let active = [];
 let rightSlots = [];
 let selLeft = null;
-let selRight = null;
-let streak = 0;
+let selRightIndex = null;
 
-function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
+function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 
-/* ===== SES ===== */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playCorrect(){
-    streak++;
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type="triangle";
-    o.frequency.value=Math.min(2000,800*(1+streak*0.2));
-    g.gain.setValueAtTime(0.3,audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.4);
-    o.connect(g).connect(audioCtx.destination);
-    o.start();o.stop(audioCtx.currentTime+0.4);
-}
-function playWrong(){
-    streak=0;
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.frequency.value=180;
-    g.gain.setValueAtTime(0.2,audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.5);
-    o.connect(g).connect(audioCtx.destination);
-    o.start();o.stop(audioCtx.currentTime+0.5);
-}
-
-/* ===== SELECT ===== */
-function fillSelectors(){
-    mainUnit.innerHTML="";
-    Object.keys(units).forEach(k=>mainUnit.innerHTML+=`<option>${k}</option>`);
+/* ===== SELECTLER ===== */
+function fillSelectors() {
+    mainUnit.innerHTML = "";
+    Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
     loadSub();
 }
-function loadSub(){
-    subUnit.innerHTML="";
-    Object.keys(units[mainUnit.value]).forEach(k=>subUnit.innerHTML+=`<option>${k}</option>`);
+function loadSub() {
+    subUnit.innerHTML = "";
+    Object.keys(units[mainUnit.value]).forEach(k => subUnit.innerHTML += `<option>${k}</option>`);
 }
-mainUnit.onchange=loadSub;
+mainUnit.onchange = loadSub;
 
-/* ===== SAĞ SLOT MANTIĞI ===== */
-function fillRightSlots(){
-    const rights=shuffle(active.map(p=>p.right));
-    for(let i=0;i<PAGE_SIZE;i++){
-        if(!rightSlots[i] && rights.length) rightSlots[i]=rights.shift();
-    }
-    for(let i=0;i<active.length;i++){
-        if(rightSlots[i]===active[i].right){
-            const j=(i+1)%PAGE_SIZE;
-            [rightSlots[i],rightSlots[j]]=[rightSlots[j],rightSlots[i]];
-        }
-    }
-}
-
-/* ===== OYUN ===== */
-function startGame(){
-    streak=0;
-    pool=shuffle([...units[mainUnit.value][subUnit.value]]);
-    active=pool.splice(0,PAGE_SIZE);
-    rightSlots=[];
-    fillRightSlots();
-    render();
-}
-function startGeneralWrongs(){
-    streak=0;
-    pool=shuffle(Object.values(generalWrongs).map(o=>o.pair));
-    active=pool.splice(0,PAGE_SIZE);
-    rightSlots=[];
-    fillRightSlots();
+/* ===== BAŞLAT ===== */
+function startGame() {
+    pool = shuffle([...units[mainUnit.value][subUnit.value]]);
+    active = pool.splice(0, PAGE_SIZE);
+    rightSlots = shuffle(active.map(p => p.right));
     render();
 }
 
-function render(){
-    leftCol.innerHTML="";
-    rightCol.innerHTML="";
-    active.forEach(p=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerText=p.left;
-        d.onclick=()=>{selLeft=p;select(d)};
+function startGeneralWrongs() {
+    alert("Genel yanlış sistemi bu sade sürümde kapalı.");
+}
+
+/* ===== RENDER ===== */
+function render() {
+    leftCol.innerHTML = "";
+    rightCol.innerHTML = "";
+
+    active.forEach(p => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = p.left;
+        d.onclick = () => selectLeft(p, d);
         leftCol.appendChild(d);
     });
-    rightSlots.forEach(r=>{
-        const d=document.createElement("div");
-        d.className="card";
-        d.innerText=r;
-        d.onclick=()=>{selRight=active.find(p=>p.right===r);select(d)};
+
+    rightSlots.forEach((txt, i) => {
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerText = txt;
+        d.onclick = () => selectRight(i, d);
         rightCol.appendChild(d);
     });
 }
 
-function select(el){
-    document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
+function selectLeft(p, el) {
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
+    selLeft = p;
     el.classList.add("selected");
-    if(selLeft&&selRight)check();
+    tryCheck();
 }
 
-function check(){
-    const l=[...leftCol.children].find(c=>c.innerText===selLeft.left);
-    const r=[...rightCol.children].find(c=>c.innerText===selRight.right);
-    const correct=active.some(p=>p.left===selLeft.left&&p.right===selRight.right);
-    if(correct){
-        l.style.color=r.style.color="#2ea043";
-        playCorrect();
-        setTimeout(()=>{
-            const aIdx=active.findIndex(p=>p.left===selLeft.left&&p.right===selRight.right);
-            if(aIdx>-1)active.splice(aIdx,1);
-            const rIdx=[...rightCol.children].indexOf(r);
-            rightSlots[rIdx]=null;
-            while(active.length<PAGE_SIZE&&pool.length)active.push(pool.shift());
-            fillRightSlots();
-            selLeft=selRight=null;
+function selectRight(i, el) {
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
+    selRightIndex = i;
+    el.classList.add("selected");
+    tryCheck();
+}
+
+function tryCheck() {
+    if (!selLeft || selRightIndex === null) return;
+
+    const rightText = rightSlots[selRightIndex];
+    const correct = selLeft.right === rightText;
+
+    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left);
+    const rCard = rightCol.children[selRightIndex];
+
+    if (correct) {
+        lCard.classList.add("correct");
+        rCard.classList.add("correct");
+
+        setTimeout(() => {
+            const idx = active.findIndex(p => p.left === selLeft.left && p.right === rightText);
+            active.splice(idx, 1);
+
+            if (pool.length > 0) {
+                const next = pool.shift();
+                active.push(next);
+                rightSlots[selRightIndex] = next.right;
+            } else {
+                rightSlots.splice(selRightIndex, 1);
+            }
+
+            selLeft = null;
+            selRightIndex = null;
             render();
-        },150);
-    }else{
-        l.style.color=r.style.color="#ff7f0e";
-        playWrong();
-        setTimeout(()=>{
-            l.style.color=r.style.color="#c9d1d9";
-            selLeft=selRight=null;
-        },300);
+        }, 200);
+    } else {
+        lCard.classList.add("wrong");
+        rCard.classList.add("wrong");
+        setTimeout(() => {
+            lCard.classList.remove("wrong");
+            rCard.classList.remove("wrong");
+            selLeft = null;
+            selRightIndex = null;
+        }, 300);
     }
 }
 
