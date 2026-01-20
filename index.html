@@ -48,7 +48,6 @@ select, button {
 <select id="mainUnit"></select>
 <select id="subUnit"></select>
 <button onclick="startGame()">Başlat</button>
-<button onclick="startGeneralWrongs()">Genel Yanlışlar</button>
 
 <div class="game">
     <div class="column" id="leftCol"></div>
@@ -98,14 +97,14 @@ const units = {
 /* ================= OYUN ================= */
 const PAGE_SIZE = 5;
 let pool = [];
-let active = [];
+let leftSlots = [];
 let rightSlots = [];
-let selLeft = null;
+let selLeftIndex = null;
 let selRightIndex = null;
 
 function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 
-/* ===== SELECTLER ===== */
+/* ===== SELECT ===== */
 function fillSelectors() {
     mainUnit.innerHTML = "";
     Object.keys(units).forEach(k => mainUnit.innerHTML += `<option>${k}</option>`);
@@ -120,13 +119,12 @@ mainUnit.onchange = loadSub;
 /* ===== BAŞLAT ===== */
 function startGame() {
     pool = shuffle([...units[mainUnit.value][subUnit.value]]);
-    active = pool.splice(0, PAGE_SIZE);
-    rightSlots = shuffle(active.map(p => p.right));
-    render();
-}
+    const first = pool.splice(0, PAGE_SIZE);
 
-function startGeneralWrongs() {
-    alert("Genel yanlış sistemi bu sade sürümde kapalı.");
+    leftSlots = first.map(p => p.left);
+    rightSlots = shuffle(first.map(p => p.right));
+
+    render();
 }
 
 /* ===== RENDER ===== */
@@ -134,11 +132,11 @@ function render() {
     leftCol.innerHTML = "";
     rightCol.innerHTML = "";
 
-    active.forEach(p => {
+    leftSlots.forEach((txt, i) => {
         const d = document.createElement("div");
         d.className = "card";
-        d.innerText = p.left;
-        d.onclick = () => selectLeft(p, d);
+        d.innerText = txt;
+        d.onclick = () => selectLeft(i, d);
         leftCol.appendChild(d);
     });
 
@@ -151,9 +149,9 @@ function render() {
     });
 }
 
-function selectLeft(p, el) {
+function selectLeft(i, el) {
     document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    selLeft = p;
+    selLeftIndex = i;
     el.classList.add("selected");
     tryCheck();
 }
@@ -166,41 +164,47 @@ function selectRight(i, el) {
 }
 
 function tryCheck() {
-    if (!selLeft || selRightIndex === null) return;
+    if (selLeftIndex === null || selRightIndex === null) return;
 
+    const leftText = leftSlots[selLeftIndex];
     const rightText = rightSlots[selRightIndex];
-    const correct = selLeft.right === rightText;
 
-    const lCard = [...leftCol.children].find(c => c.innerText === selLeft.left);
+    const correct = pool.concat(
+        leftSlots.map((l, i) => ({ left: l, right: rightSlots[i] }))
+    ).some(p => p.left === leftText && p.right === rightText);
+
+    const lCard = leftCol.children[selLeftIndex];
     const rCard = rightCol.children[selRightIndex];
 
-    if (correct) {
+    if (units[mainUnit.value][subUnit.value]
+        .some(p => p.left === leftText && p.right === rightText)) {
+
         lCard.classList.add("correct");
         rCard.classList.add("correct");
 
         setTimeout(() => {
-            const idx = active.findIndex(p => p.left === selLeft.left && p.right === rightText);
-            active.splice(idx, 1);
-
             if (pool.length > 0) {
                 const next = pool.shift();
-                active.push(next);
+                leftSlots[selLeftIndex] = next.left;
                 rightSlots[selRightIndex] = next.right;
             } else {
+                leftSlots.splice(selLeftIndex, 1);
                 rightSlots.splice(selRightIndex, 1);
             }
 
-            selLeft = null;
+            selLeftIndex = null;
             selRightIndex = null;
             render();
         }, 200);
+
     } else {
         lCard.classList.add("wrong");
         rCard.classList.add("wrong");
+
         setTimeout(() => {
             lCard.classList.remove("wrong");
             rCard.classList.remove("wrong");
-            selLeft = null;
+            selLeftIndex = null;
             selRightIndex = null;
         }, 300);
     }
@@ -210,4 +214,5 @@ fillSelectors();
 </script>
 </body>
 </html>
+
 
