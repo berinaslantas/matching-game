@@ -92,7 +92,7 @@ function startGame(){
     pool = [...units[mainUnit.value][subUnit.value]];
     const first = pool.splice(0,PAGE_SIZE);
     leftSlots = first.map(p=>p.left);
-    rightSlots = [...leftSlots].reverse();
+    rightSlots = first.map(p=>p.right).reverse(); // SAĞ BLOK: right değerleri ters sıra
     solvedIndexes = [];
     selL=selR=null;
     render();
@@ -132,11 +132,11 @@ function selectCheck(){
 
         if(solvedIndexes.length===2 && pool.length>=2){
             const newPairs=[pool.shift(), pool.shift()];
-            // SOL BLOK: sırayla boşalan yerlere
+            // SOL BLOK: boşalan slotlara sırayla
             solvedIndexes.forEach((idx,i)=>leftSlots[idx]=newPairs[i].left);
             // SAĞ BLOK: ters çapraz mantık
-            rightSlots[solvedIndexes[0]] = newPairs[1].right; // 2. yeni sorunun cevabı 1. slot
-            rightSlots[solvedIndexes[1]] = newPairs[0].right; // 1. yeni sorunun cevabı 2. slot
+            rightSlots[solvedIndexes[0]] = newPairs[1].right; // ikinci yeni sorunun cevabı 1. slot
+            rightSlots[solvedIndexes[1]] = newPairs[0].right; // birinci yeni sorunun cevabı 2. slot
             solvedIndexes=[];
         }
     } else {
@@ -153,7 +153,6 @@ fillSelectors();
 </script>
 </body>
 </html>
-
 
 
 
