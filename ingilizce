@@ -5010,7 +5010,7 @@ const units = {
       { left: "concerned with", right: "...ile ilgili" },
       { left: "concerned about", right: "...konuda endişeli" },
       { left: "concerned over", right: "...konuda endişeli" },
-      { left: "concerned for", right: "...için endişeli" }
+      { left: "concerned for", right: "..için endişeli" }
     ]
   }
 };
